@@ -15,6 +15,7 @@ vehicle = connect(connection_string, wait_ready=True)
 
 stateCheck = None
 
+# A class that will repeatedly execute by the given interval
 class RepeatTimer(Timer):
     def run(self):
         while not self.finished.wait(self.interval):
@@ -218,7 +219,7 @@ def flyToPoint(lat,lon, alt):
     #     time.sleep(1)
      # fly to point1
     point1 = LocationGlobalRelative(lat, lon, alt)
-    print("Target Point: ({:f},{:f},{:f})".format(lat,lon,alt))
+    print("Target Point: ({:12.8f},{:12.8f},{:5.2f})".format(lat,lon,alt))
     # print("Target Point: "+str(point1))
 
     targetDistance = get_distance_metres(vehicle.location.global_relative_frame, point1)
@@ -247,7 +248,6 @@ def flyToPoint(lat,lon, alt):
 
 print("while loop")
 test_alt = 0.5
-
 
 while 1:
     print("loop...")
