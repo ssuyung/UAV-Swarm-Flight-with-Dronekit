@@ -131,51 +131,53 @@ def takeoff(aTargetAltitude, goP1, goP2):
 
 
     # fly to point1
-    point1 = LocationGlobalRelative(float(goP1['lat']), float(goP1['lon']), 10)
-    print("Target Point 1:"+str(point1))
+    # point1 = LocationGlobalRelative(float(goP1['lat']), float(goP1['lon']), 10)
+    # print("Target Point 1:"+str(point1))
 
-    targetDistance = get_distance_metres(vehicle.location.global_relative_frame, point1)
-    print("Target distance: "+str(targetDistance))
+    # targetDistance = get_distance_metres(vehicle.location.global_relative_frame, point1)
+    # print("Target distance: "+str(targetDistance))
 
-    vehicle.simple_goto(point1)
-    print("Executed simple_goto(P1)")
+    # vehicle.simple_goto(point1)
+    # print("Executed simple_goto(P1)")
 
-    while vehicle.mode.name=="GUIDED": #Stop action if we are no longer in guided mode.
-        remainingDistance=get_distance_metres(vehicle.location.global_relative_frame, point1)
-        print("Distance to target: ", remainingDistance)
-        if remainingDistance<=1: #Just below target, in case of undershoot.
-            print("Reached target")
-            break
-        elif stateCheck == "land":
-            print("exit distance check loop...")
-            return
+    # while vehicle.mode.name=="GUIDED": #Stop action if we are no longer in guided mode.
+    #     remainingDistance=get_distance_metres(vehicle.location.global_relative_frame, point1)
+    #     print("Distance to target: ", remainingDistance)
+    #     if remainingDistance<=1: #Just below target, in case of undershoot.
+    #         print("Reached target")
+    #         break
+    #     elif stateCheck == "land":
+    #         print("exit distance check loop...")
+    #         return
 
-        time.sleep(1)
+    #     time.sleep(1)
+    flyToPoint(goP1['lat'], goP1['lon'], 10)
 
     # print("rp1 slp3")
     # time.sleep(3)
 
     # fly to point2
-    point2 = LocationGlobalRelative(float(goP2['lat']), float(goP2['lon']), 10)
-    print("Target Point 2:"+str(point2))
+    # point2 = LocationGlobalRelative(float(goP2['lat']), float(goP2['lon']), 10)
+    # print("Target Point 2:"+str(point2))
 
-    targetDistance = get_distance_metres(vehicle.location.global_relative_frame, point2)
-    print("Target distance: "+str(targetDistance))
+    # targetDistance = get_distance_metres(vehicle.location.global_relative_frame, point2)
+    # print("Target distance: "+str(targetDistance))
 
-    vehicle.simple_goto(point2)
-    print("Executed simple_goto(2)")
+    # vehicle.simple_goto(point2)
+    # print("Executed simple_goto(2)")
 
-    while vehicle.mode.name=="GUIDED": #Stop action if we are no longer in guided mode.
-        remainingDistance=get_distance_metres(vehicle.location.global_relative_frame, point2)
-        print("Distance to target: ", remainingDistance)
-        if remainingDistance<=1: #Just below target, in case of undershoot.
-            print("Reached target")
-            break
-        elif stateCheck == "land":
-            print("exit distance check loop...")
-            return
+    # while vehicle.mode.name=="GUIDED": #Stop action if we are no longer in guided mode.
+    #     remainingDistance=get_distance_metres(vehicle.location.global_relative_frame, point2)
+    #     print("Distance to target: ", remainingDistance)
+    #     if remainingDistance<=1: #Just below target, in case of undershoot.
+    #         print("Reached target")
+    #         break
+    #     elif stateCheck == "land":
+    #         print("exit distance check loop...")
+    #         return
 
-        time.sleep(1)
+    #     time.sleep(1)
+    flyToPoint(goP2['lat'], goP2['lon'], 10)
 
     # print("rp2 slp3")
     # time.sleep(3)
@@ -193,20 +195,42 @@ def takeoff(aTargetAltitude, goP1, goP2):
 
 
 # one point to one point
-def flytopoint(lat,lon):
-    point = LocationGlobalRelative(float(lat), float(lon), 10)
-    print(point)
+def flyToPoint(lat,lon, alt):
+    # point = LocationGlobalRelative(float(lat), float(lon), 10)
+    # print(point)
 
-    targetDistance = get_distance_metres(vehicle.location.global_relative_frame, point)
-    print(targetDistance)
+    # targetDistance = get_distance_metres(vehicle.location.global_relative_frame, point)
+    # print(targetDistance)
 
-    vehicle.simple_goto(point)
-    print("simple_goto")
+    # vehicle.simple_goto(point)
+    # print("simple_goto")
+
+    # while vehicle.mode.name=="GUIDED": #Stop action if we are no longer in guided mode.
+    #     remainingDistance=get_distance_metres(vehicle.location.global_relative_frame, point2)
+    #     print("Distance to target: ", remainingDistance)
+    #     if remainingDistance<=targetDistance*0.01: #Just below target, in case of undershoot.
+    #         print("Reached target")
+    #         break
+    #     elif stateCheck == "land":
+    #         print("exit distance check loop...")
+    #         return
+
+    #     time.sleep(1)
+     # fly to point1
+    point1 = LocationGlobalRelative(lat, lon, alt)
+    print("Target Point: ({:f},{:f},{:f})".format(lat,lon,alt))
+    # print("Target Point: "+str(point1))
+
+    targetDistance = get_distance_metres(vehicle.location.global_relative_frame, point1)
+    print("Target distance: ",str(targetDistance))
+
+    vehicle.simple_goto(point1)
+    print("Executed simple_goto(P1)")
 
     while vehicle.mode.name=="GUIDED": #Stop action if we are no longer in guided mode.
-        remainingDistance=get_distance_metres(vehicle.location.global_relative_frame, point2)
+        remainingDistance=get_distance_metres(vehicle.location.global_relative_frame, point1)
         print("Distance to target: ", remainingDistance)
-        if remainingDistance<=targetDistance*0.01: #Just below target, in case of undershoot.
+        if remainingDistance<=1: #Just below target, in case of undershoot.
             print("Reached target")
             break
         elif stateCheck == "land":
@@ -214,7 +238,6 @@ def flytopoint(lat,lon):
             return
 
         time.sleep(1)
-
     # print("rp slp3")
     # time.sleep(3)
     # Timer(1.0,flytopoint,[nlat,nlon]).start()
