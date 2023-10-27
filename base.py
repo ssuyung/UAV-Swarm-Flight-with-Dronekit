@@ -4,6 +4,26 @@ import time
 import sys
 import math
 from threading import Timer
+from rf_function.rf import Transmitter
+from rf_function.rf import Vehicle
+
+puslelength = 200
+# Initialize the rf trasmitter        
+transmitter = Transmitter(gpio=17, protocol=1, puslelength=puslelength, repeat=10)
+# Start transmitting
+transmitter.start()
+
+timecode = 0
+self_vehicle = Vehicle("24.546546", "120.583748", "77.20", "10.00", [timecode, timecode, timecode])
+other_vehicle = Vehicle("24.546546", "120.583748", "77.20", "10.00", [timecode, timecode, timecode])
+
+record_filename = "z_base.txt"
+file = open(record_filename, 'a')
+file.write("--------------------------")
+file.write(record_filename)
+file.write("--------------------------")
+file.write("\n")
+file.close()
 
 
 # connection_string = "/dev/ttyACM0"
@@ -48,33 +68,24 @@ def watchstate():
                                     # but this implementation leads to an infinite amount of threads,
                                     # which causes weird errors, so we now use repeattimer instead
 
-# Timer(1.0, watchstate).start()
-
-# Base Drone will need to send its coordinates to Rover Drone
-# def sendInfo():
-    # process the data, (parse the coordinates to fit in the data block, etc.)
-    # sendobj = {
-    #     "RelativeAlt" : vehicle.location.global_relative_frame.alt,
-    #     "GlobalLat" : vehicle.location.global_frame.lat,
-    #     "GlobalLon" : vehicle.location.global_frame.lon
-    #     #"Time" : curTime
-    # }
-    # send the object here
-    # print("Sent Info Object at time", curTime)
-
-
-# infoTimer = RepeatTimer(1, sendInfo)
-# infoTimer.start()
-# Rover Drone will need to receive Base's coordinates and keep following it (keep flyToPoint(Base's coordinates))
-# def ReceiveInfo():
-    # recvObj = ?
-    # Pre-Process the object here (check the time, rebuild the coordinates etc.)
-    # flyToPoint() (we need to kill the previous thread of flyToPoint first, or there would be several threads trying to fly to different points)
-
 timer = RepeatTimer(5, watchstate)
 timer.start()
-# time.sleep(5)
-# timer.cancel()
+
+# Base Drone will need to send its coordinates to Rover Drone
+def sendInfo():
+    timecode = (timecode + 1) % 10
+    self_vehicle.update_by_uav(vehicle.location.global_frame.lat, vehicle.location.global_frame.lon, vehicle.location.global_frame.alt)
+    transmitter.send_time_height(timecode, self_vehicle)
+    transmitter.send_lat(timecode, self_vehicle)
+    transmitter.send_lon(timecode, self_vehicle)
+    
+    self_vehicle.write_to_file(record_filename)
+
+
+infoTimer = RepeatTimer(1, sendInfo)
+infoTimer.start()
+
+
 
 
 

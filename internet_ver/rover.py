@@ -4,6 +4,31 @@ import time
 import sys
 import math
 from threading import Timer
+from rf_function.rf import Receiver
+from rf_function.rf import Vehicle
+from rf_function.rf import exithandler
+import sys 
+import socket
+
+client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+ip = "172.20.10.8"
+port = int(sys.argv[1])
+client.connect((ip,port))
+
+
+amount_of_info = 3
+timecode = [0] * amount_of_info
+valid = [False] * amount_of_info
+# Initialize the vehicle
+#timecode = 0
+self_vehicle = Vehicle("24.546546", "120.583748", "77.20", "10.00", timecode)
+other_vehicle = Vehicle("24.546546", "120.583748", "77.20", "10.00", timecode)
+
+record_filename = "x_rover.txt"
+file = open(record_filename, 'a')
+file.write(record_filename)
+file.write("\n")
+file.close()
 
 
 # connection_string = "/dev/ttyACM0"
@@ -48,28 +73,27 @@ def watchstate():
                                     # but this implementation leads to an infinite amount of threads,
                                     # which causes weird errors, so we now use repeattimer instead
 
-# Timer(1.0, watchstate).start()
 
-# Base Drone will need to send its coordinates to Rover Drone
-# def sendInfo():
-    # process the data, (parse the coordinates to fit in the data block, etc.)
-    # sendobj = {
-    #     "RelativeAlt" : vehicle.location.global_relative_frame.alt,
-    #     "GlobalLat" : vehicle.location.global_frame.lat,
-    #     "GlobalLon" : vehicle.location.global_frame.lon
-    #     #"Time" : curTime
-    # }
-    # send the object here
-    # print("Sent Info Object at time", curTime)
-
-
-# infoTimer = RepeatTimer(1, sendInfo)
-# infoTimer.start()
 # Rover Drone will need to receive Base's coordinates and keep following it (keep flyToPoint(Base's coordinates))
-# def ReceiveInfo():
+def ReceiveInfo():
     # recvObj = ?
     # Pre-Process the object here (check the time, rebuild the coordinates etc.)
     # flyToPoint() (we need to kill the previous thread of flyToPoint first, or there would be several threads trying to fly to different points)
+    
+    msg = client.recv(1024)
+    str_msg = msg.decode()
+    
+    other_vehicle.update_by_TCP(str_msg)
+    
+    other_vehicle.write_to_file(record_filename)
+
+    point1 = LocationGlobalRelative(float(other_vehicle.latitude), float(other_vehicle.longitude), float(other_vehicle.height))
+    point2 = LocationGlobalRelative(float(vehicle.location.global_frame.lat), float(vehicle.location.global_frame.lon), float(vehicle.location.global_frame.alt))
+    print(get_distance_metres(point1,point2))
+        
+
+getInfoTimer = RepeatTimer(1, ReceiveInfo)
+getInfoTimer.start()
 
 timer = RepeatTimer(5, watchstate)
 timer.start()
@@ -267,65 +291,65 @@ def flyToPoint(lat,lon, alt):
 
 
 
-print("while loop")
-test_alt = 0.5
+# print("while loop")
+# test_alt = 0.5
 
-while 1:
-    print("loop...")
-    line = sys.stdin.readline().strip()
-    print(line)
+# while 1:
+#     print("loop...")
+#     line = sys.stdin.readline().strip()
+#     print(line)
 
-    # PT (24.7948542,120.9922114),(1,2)
-    # the format should be exactly: "PT (lat1,lon1),(lat2,lon2)"
-    if line[0:2] == "PT":
-        print("is PT")
-        breakc = 0
-        secS = 0
-        p1 = {}
-        p2 = {}
+#     # PT (24.7948542,120.9922114),(1,2)
+#     # the format should be exactly: "PT (lat1,lon1),(lat2,lon2)"
+#     if line[0:2] == "PT":
+#         print("is PT")
+#         breakc = 0
+#         secS = 0
+#         p1 = {}
+#         p2 = {}
 
-        for i in range(4,len(line)):
-            if line[i] == ',':
-                p1['lat'] = line[4:i]
-                breakc = i + 1
-            elif line[i] == ')':
-                p1['lon'] = line[breakc:i]
-                secS = i + 3
-                break
+#         for i in range(4,len(line)):
+#             if line[i] == ',':
+#                 p1['lat'] = line[4:i]
+#                 breakc = i + 1
+#             elif line[i] == ')':
+#                 p1['lon'] = line[breakc:i]
+#                 secS = i + 3
+#                 break
 
-        for i in range(secS,len(line)):
-            if line[i] == ',':
-                p2['lat'] = line[secS:i]
-                breakc = i + 1
-            elif line[i] == ')':
-                p2['lon'] = line[breakc:i]
-                secS = i + 3
-                break
+#         for i in range(secS,len(line)):
+#             if line[i] == ',':
+#                 p2['lat'] = line[secS:i]
+#                 breakc = i + 1
+#             elif line[i] == ')':
+#                 p2['lon'] = line[breakc:i]
+#                 secS = i + 3
+#                 break
         
-        # print("end calculate")
-        # print("P1: "+p1['lat'] + " " + p1['lon'])
-        # print("P2: "+p2['lat'] + " " + p2['lon'])
+#         # print("end calculate")
+#         # print("P1: "+p1['lat'] + " " + p1['lon'])
+#         # print("P2: "+p2['lat'] + " " + p2['lon'])
 
-        stateCheck = None
-        Timer(1.0, takeoff, [test_alt,p1,p2]).start()
+#         stateCheck = None
+#         Timer(1.0, takeoff, [test_alt,p1,p2]).start()
 
-    elif line == "land":
-        print("Received LAND")
-        stateCheck = "land"
-        while(vehicle.mode != VehicleMode("LAND")):
-            print("Trying to set vehicle mode to LAND")
-            vehicle.mode = VehicleMode("LAND")
-        print("Landing")
+#     elif line == "land":
+#         print("Received LAND")
+#         stateCheck = "land"
+#         while(vehicle.mode != VehicleMode("LAND")):
+#             print("Trying to set vehicle mode to LAND")
+#             vehicle.mode = VehicleMode("LAND")
+#         print("Landing")
 
-    elif line == "state":
-        watchstate()
+#     elif line == "state":
+#         watchstate()
         
-    elif line == "start":
-        print("Starting state report")
-        timer = RepeatTimer(1, watchstate)
-        timer.start()
+#     elif line == "start":
+#         print("Starting state report")
+#         timer = RepeatTimer(1, watchstate)
+#         timer.start()
 
-    elif line == "stop":
-        print("Stopping state report")
-        timer.cancel()
+#     elif line == "stop":
+#         print("Stopping state report")
+#         timer.cancel()
 # vehicle.close()
