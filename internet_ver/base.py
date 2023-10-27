@@ -3,11 +3,12 @@ import json
 import time
 import sys
 import math
-from threading import Timer
-from rf_function.rf import Transmitter
-from rf_function.rf import Vehicle
-import sys 
 import socket
+from threading import Timer
+sys.path.append("..")
+
+from rf_function.rf import Transmitter
+from rf_function.rf import Vehicle\
 
 ip = "172.20.10.8"
 port = int(sys.argv[1])

@@ -3,12 +3,13 @@ import json
 import time
 import sys
 import math
+import socket
 from threading import Timer
+
+sys.path.append("..")
 from rf_function.rf import Receiver
 from rf_function.rf import Vehicle
 from rf_function.rf import exithandler
-import sys 
-import socket
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 ip = "172.20.10.8"
