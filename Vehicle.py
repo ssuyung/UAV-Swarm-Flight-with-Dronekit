@@ -10,6 +10,7 @@ from RepeatTimer import RepeatTimer
 class Vehicle(dronekit.Vehicle):
     def __init__(self, connection_string):  
         self.vehicle = connect(connection_string, wait_ready=True)
+        self.stateCheck=None
 
     def preArmCheck(self):
         print("Basic pre-arm checks")
@@ -30,7 +31,7 @@ class Vehicle(dronekit.Vehicle):
 
         # Confirm vehicle armed before attempting to take off
         while not self.vehicle.armed:
-            if stateCheck == "land":
+            if self.stateCheck == "land":
                 print("exit vechicle armed check loop...")
                 return
             else:
@@ -91,7 +92,7 @@ class Vehicle(dronekit.Vehicle):
             if self.vehicle.location.global_relative_frame.alt >= aTargetAltitude * 0.95:
                 print("Reached target altitude")
                 break
-            elif stateCheck == "land":
+            elif self.stateCheck == "land":
                 print("exit altitude check loop...")
                 return
             
@@ -116,7 +117,7 @@ class Vehicle(dronekit.Vehicle):
             if remainingDistance<=1: #Just below target, in case of undershoot.
                 print("Reached target")
                 break
-            elif stateCheck == "land":
+            elif self.stateCheck == "land":
                 print("exit distance check loop...")
                 return
 
