@@ -42,39 +42,11 @@ def watchstate():
         stateobj["homeLocationLat"]=vehicle.home_location.lat
         stateobj["homeLocationLon"]=vehicle.home_location.lon
 
-    # sendobj = json.dumps(stateobj) # code from previous year's work, not used for now
     print(stateobj)
-    # Timer(5.0,watchstate).start() # calling the next thread to continue outputting the states, 
-                                    # but this implementation leads to an infinite amount of threads,
-                                    # which causes weird errors, so we now use repeattimer instead
 
-# Timer(1.0, watchstate).start()
-
-# Base Drone will need to send its coordinates to Rover Drone
-# def sendInfo():
-    # process the data, (parse the coordinates to fit in the data block, etc.)
-    # sendobj = {
-    #     "RelativeAlt" : vehicle.location.global_relative_frame.alt,
-    #     "GlobalLat" : vehicle.location.global_frame.lat,
-    #     "GlobalLon" : vehicle.location.global_frame.lon
-    #     #"Time" : curTime
-    # }
-    # send the object here
-    # print("Sent Info Object at time", curTime)
-
-
-# infoTimer = RepeatTimer(1, sendInfo)
-# infoTimer.start()
-# Rover Drone will need to receive Base's coordinates and keep following it (keep flyToPoint(Base's coordinates))
-# def ReceiveInfo():
-    # recvObj = ?
-    # Pre-Process the object here (check the time, rebuild the coordinates etc.)
-    # flyToPoint() (we need to kill the previous thread of flyToPoint first, or there would be several threads trying to fly to different points)
 
 timer = RepeatTimer(5, watchstate)
 timer.start()
-# time.sleep(5)
-# timer.cancel()
 
 
 
@@ -89,13 +61,7 @@ def get_distance_metres(aLocation1, aLocation2):
     dlong = float(aLocation2.lon) - float(aLocation1.lon)
     return math.sqrt((dlat*dlat) + (dlong*dlong)) * 1.113195e5
 
-
-
-def takeoff(aTargetAltitude, goP1, goP2):
-    """
-    Arms vehicle and fly to aTargetAltitude.
-    """
-
+def pre_arm_check():
     print("Basic pre-arm checks")
     # Don't try to arm until autopilot is ready
 
@@ -123,6 +89,41 @@ def takeoff(aTargetAltitude, goP1, goP2):
             vehicle.armed = True
             print(" Waiting for arming...")
         time.sleep(1)
+
+def takeoff(aTargetAltitude, goP1, goP2):
+    """
+    Arms vehicle and fly to aTargetAltitude.
+    """
+
+    # print("Basic pre-arm checks")
+    # # Don't try to arm until autopilot is ready
+
+    # while not vehicle.is_armable:
+    #     if stateCheck == "land":
+    #         print("exit vechicle armable check loop...")
+    #         return
+    #     else:
+    #         print(" Waiting for vehicle to initialise...")
+
+    #     time.sleep(1)
+    
+    # print("Arming motors")
+    # # Copter should arm in GUIDED mode
+    # vehicle.mode = VehicleMode("GUIDED")
+    # vehicle.armed = True
+
+    # # Confirm vehicle armed before attempting to take off
+    # while not vehicle.armed:
+    #     if stateCheck == "land":
+    #         print("exit vechicle armed check loop...")
+    #         return
+    #     else:
+    #         vehicle.mode = VehicleMode("GUIDED")
+    #         vehicle.armed = True
+    #         print(" Waiting for arming...")
+    #     time.sleep(1)
+
+    pre_arm_check()
 
     print("Taking off!")
     print("Ascending to altitude: "+str(aTargetAltitude))
@@ -153,57 +154,10 @@ def takeoff(aTargetAltitude, goP1, goP2):
 
 
     # fly to point1
-    # point1 = LocationGlobalRelative(float(goP1['lat']), float(goP1['lon']), 10)
-    # print("Target Point 1:"+str(point1))
-
-    # targetDistance = get_distance_metres(vehicle.location.global_relative_frame, point1)
-    # print("Target distance: "+str(targetDistance))
-
-    # vehicle.simple_goto(point1)
-    # print("Executed simple_goto(P1)")
-
-    # while vehicle.mode.name=="GUIDED": #Stop action if we are no longer in guided mode.
-    #     remainingDistance=get_distance_metres(vehicle.location.global_relative_frame, point1)
-    #     print("Distance to target: ", remainingDistance)
-    #     if remainingDistance<=1: #Just below target, in case of undershoot.
-    #         print("Reached target")
-    #         break
-    #     elif stateCheck == "land":
-    #         print("exit distance check loop...")
-    #         return
-
-    #     time.sleep(1)
     flyToPoint(goP1['lat'], goP1['lon'], 10)
 
-    # print("rp1 slp3")
-    # time.sleep(3)
-
     # fly to point2
-    # point2 = LocationGlobalRelative(float(goP2['lat']), float(goP2['lon']), 10)
-    # print("Target Point 2:"+str(point2))
-
-    # targetDistance = get_distance_metres(vehicle.location.global_relative_frame, point2)
-    # print("Target distance: "+str(targetDistance))
-
-    # vehicle.simple_goto(point2)
-    # print("Executed simple_goto(2)")
-
-    # while vehicle.mode.name=="GUIDED": #Stop action if we are no longer in guided mode.
-    #     remainingDistance=get_distance_metres(vehicle.location.global_relative_frame, point2)
-    #     print("Distance to target: ", remainingDistance)
-    #     if remainingDistance<=1: #Just below target, in case of undershoot.
-    #         print("Reached target")
-    #         break
-    #     elif stateCheck == "land":
-    #         print("exit distance check loop...")
-    #         return
-
-    #     time.sleep(1)
     flyToPoint(goP2['lat'], goP2['lon'], 10)
-
-    # print("rp2 slp3")
-    # time.sleep(3)
-
 
     if stateCheck == "land":
         print("return ...")
@@ -218,36 +172,14 @@ def takeoff(aTargetAltitude, goP1, goP2):
 
 # one point to one point
 def flyToPoint(lat,lon, alt):
-    # point = LocationGlobalRelative(float(lat), float(lon), 10)
-    # print(point)
-
-    # targetDistance = get_distance_metres(vehicle.location.global_relative_frame, point)
-    # print(targetDistance)
-
-    # vehicle.simple_goto(point)
-    # print("simple_goto")
-
-    # while vehicle.mode.name=="GUIDED": #Stop action if we are no longer in guided mode.
-    #     remainingDistance=get_distance_metres(vehicle.location.global_relative_frame, point2)
-    #     print("Distance to target: ", remainingDistance)
-    #     if remainingDistance<=targetDistance*0.01: #Just below target, in case of undershoot.
-    #         print("Reached target")
-    #         break
-    #     elif stateCheck == "land":
-    #         print("exit distance check loop...")
-    #         return
-
-    #     time.sleep(1)
-     # fly to point1
     point1 = LocationGlobalRelative(float(lat), float(lon), float(alt))
     print("Target Point: ({:12.8f},{:12.8f},{:5.2f})".format(float(lat),float(lon),float(alt)))
-    # print("Target Point: "+str(point1))
 
     targetDistance = get_distance_metres(vehicle.location.global_relative_frame, point1)
     print("Target distance: ",str(targetDistance))
 
     vehicle.simple_goto(point1)
-    print("Executed simple_goto(P1)")
+    print("Executed simple_goto()")
 
     while vehicle.mode.name=="GUIDED": #Stop action if we are no longer in guided mode.
         remainingDistance=get_distance_metres(vehicle.location.global_relative_frame, point1)
