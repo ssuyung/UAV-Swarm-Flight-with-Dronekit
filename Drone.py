@@ -7,16 +7,18 @@ from threading import Timer
 from RepeatTimer import RepeatTimer
 
 
-class Vehicle(dronekit.Vehicle):
+class Drone(dronekit.Vehicle):
     def __init__(self, connection_string):  
+        print("Connect to vehicle on: %s" % connection_string)
         self.vehicle = connect(connection_string, wait_ready=True)
         self.stateCheck=None
+        self.stateReportTimer=None
 
     def preArmCheck(self):
         print("Basic pre-arm checks")
         # Don't try to arm until autopilot is ready
         while not self.vehicle.is_armable:
-            if stateCheck == "land":
+            if self.stateCheck == "land":
                 print("exit vechicle armable check loop...")
                 return
             else:
@@ -101,6 +103,7 @@ class Vehicle(dronekit.Vehicle):
         # fly to takoff location
         print("Exiting takeoff()")
 
+    # TODO: turn the argument to a LocationGlobalRelative object
     def flyToPoint(self,lat,lon,alt):
         point1 = LocationGlobalRelative(float(lat), float(lon), float(alt))
         print("Target Point: ({:12.8f},{:12.8f},{:5.2f})".format(float(lat),float(lon),float(alt)))
@@ -147,8 +150,12 @@ class Vehicle(dronekit.Vehicle):
         print(stateobj)
     
     def setStateReport(self, freq):
-        timer = RepeatTimer(5, self.getState)
-        timer.start()
+        self.stateReportTimer = RepeatTimer(5, self.getState)
+        self.stateReportTimer.start()
+    
+    def cancelStateReport(self):
+        if(self.stateReportTimer):
+            self.stateReportTimer.cancel()
  
 
 

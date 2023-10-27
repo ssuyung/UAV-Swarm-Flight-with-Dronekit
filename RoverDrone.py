@@ -5,12 +5,14 @@ import sys
 import math
 from threading import Timer
 from RepeatTimer import RepeatTimer
+from Drone import Drone
 
 from uav import get_distance_metres, flyToPoint, watchstate
 from rf_function.rf import Receiver
 from rf_function.rf import Vehicle
 from rf_function.rf import exithandler
 
+# TODO: complete RoverDrone class
 pulselength = 200
 
 timestamp = None
@@ -63,9 +65,3 @@ def ReceiveInfo():
             print(get_distance_metres(point1, point2))
         else: sleep_or_not = False
     if(sleep_or_not): time.sleep(0.01)
-
-getInfoTimer = RepeatTimer(1, ReceiveInfo)
-getInfoTimer.start()
-
-timer = RepeatTimer(5, watchstate)
-timer.start()
