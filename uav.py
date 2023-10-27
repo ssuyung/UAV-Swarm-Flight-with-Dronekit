@@ -4,7 +4,7 @@ import time
 import sys
 import math
 from threading import Timer
-
+from RepeatTimer import RepeatTimer
 
 # connection_string = "/dev/ttyACM0"
 connection_string = "/dev/tty.usbmodem14101"
@@ -15,11 +15,6 @@ vehicle = connect(connection_string, wait_ready=True)
 
 stateCheck = None
 
-# A class that will repeatedly execute by the given interval
-class RepeatTimer(Timer):
-    def run(self):
-        while not self.finished.wait(self.interval):
-            self.function(*self.args, **self.kwargs)
 
 def watchstate():
     stateobj = {
@@ -192,9 +187,6 @@ def flyToPoint(lat,lon, alt):
             return
 
         time.sleep(1)
-    # print("rp slp3")
-    # time.sleep(3)
-    # Timer(1.0,flytopoint,[nlat,nlon]).start()
 
 
 
