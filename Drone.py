@@ -76,7 +76,6 @@ class Drone(dronekit.Vehicle):
         # fly to takoff location
         print("Exiting takeoff()")
 
-    # TODO: turn the argument to a LocationGlobalRelative object
     def flyToPoint(self,targetPoint):
         # point1 = LocationGlobalRelative(float(lat), float(lon), float(alt))
         print("Target Point: ({:12.8f},{:12.8f},{:5.2f})".format(targetPoint.lat,targetPoint.lon,targetPoint.alt))
