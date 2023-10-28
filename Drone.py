@@ -150,8 +150,13 @@ class Drone(dronekit.Vehicle):
         print(stateobj)
     
     def setStateReport(self, freq):
+        if(self.stateReportTimer.is_alive()):
+            print("There's already a State Report Timer")
+            return -1
+        
         self.stateReportTimer = RepeatTimer(5, self.getState)
         self.stateReportTimer.start()
+        return 0
     
     def cancelStateReport(self):
         if(self.stateReportTimer):

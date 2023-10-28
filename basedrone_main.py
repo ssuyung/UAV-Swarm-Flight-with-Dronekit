@@ -11,11 +11,11 @@ from BaseDrone import BaseDrone
 # connection_string = "/dev/ttyACM0"
 connection_string = "/dev/tty.usbmodem14101"
 
-frequency = 1   # Frequency for the sendInfo()
+interval = 1   # interval for the sendInfo(), in second
 
 
 basedrone = BaseDrone(connection_string)
 
 while(1):
     basedrone.sendInfo()
-    time.sleep(frequency)   # Delay for 1 second
+    time.sleep(interval)   # Delay for (interval) second
