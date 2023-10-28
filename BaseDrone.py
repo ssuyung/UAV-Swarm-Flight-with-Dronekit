@@ -16,6 +16,12 @@ class BaseDrone(Drone):
         super().__init(connection_string)
         self.sender = Sender(gpio=17, protocol=1, puslelength=200, repeat=10)
 
+    def startSender(self):
+        self.sender.start()
+
+    def endSender(self):
+        self.sender.end()
+
     def sendInfo(self):
         self.sender.send_info(self)
         # self.sender.timecode = (self.sender.timecode + 1) % 10

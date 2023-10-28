@@ -5,6 +5,7 @@ import time
 class Receiver(Transmitter):
     def receive(self,gpio,protocol,puslelength,repeat):
         super().__init__(gpio,protocol,puslelength,repeat)
+        # TODO: initialize timecode[] variable
 
     def receiveMsg(self):
         # If timestamp is the same, it means the current message has been read and processed by us
