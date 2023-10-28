@@ -19,7 +19,9 @@ class Sender(Transmitter):
 
     def send_lat(self, vehicle):
         '''
-        Sends the latitude of the vehicle
+        Sends the latitude of the vehicle. 
+        The message should be an integer of at most 10-digit by RF API definition. 
+        Only the digits AFTER the decimal point of the latitude will be sent due to this restriction.
         '''
         latitude = float(vehicle.location.global_frame.lat)
         # latitude = 12.33240
@@ -34,7 +36,9 @@ class Sender(Transmitter):
     
     def send_lon(self, vehicle):
         '''
-        Sends the longitude of the vehicle
+        Sends the longitude of the vehicle.
+        The message should be an integer of at most 10-digit by RF API definition.
+        Only the digits AFTER the decimal point of the latitude will be sent due to this restriction.
         '''
         longitude = float(vehicle.location.global_frame.lon)
         # longitude = 123.4560078
@@ -50,8 +54,10 @@ class Sender(Transmitter):
     def send_time_height(self, vehicle):
         '''
         Sends the time and height of the vehicle
-        Time takes up 3 digits (the last digit of minute and two digits of second)
-        Height takes up 5 digits (123.552 meters => 12355; 23.2342 => 02323)
+        The message should be an integer of at most 10-digit by RF API definition
+        Only the following information will be sent due to this restriction:
+            Time takes up 3 digits (the last digit of minute and two digits of second)
+            Height takes up 5 digits (123.552 meters => 12355; 23.2342 => 02323)
         '''
         height_float = float(vehicle.location.global_frame.alt)
         # height_float = 23.223

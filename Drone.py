@@ -1,4 +1,5 @@
 from dronekit import connect, VehicleMode, LocationGlobalRelative
+import dronekit
 import json
 import time
 import sys
@@ -42,7 +43,7 @@ class Drone(dronekit.Vehicle):
                 print(" Waiting for arming...")
             time.sleep(1)
 
-    def takeoff(self, aTargetAltitude, goP1, goP2):
+    def takeoff(self, aTargetAltitude):
         """
         Arms vehicle and fly to aTargetAltitude.
         """
@@ -75,7 +76,7 @@ class Drone(dronekit.Vehicle):
         #         print(" Waiting for arming...")
         #     time.sleep(1)
 
-        self.pre_arm_check()
+        self.preArmCheck()
 
         print("Taking off!")
         print("Ascending to altitude: "+str(aTargetAltitude))
@@ -125,6 +126,12 @@ class Drone(dronekit.Vehicle):
                 return
 
             time.sleep(1)
+    def land(self):
+        self.stateCheck = "land"
+        while(self.vehicle.mode != VehicleMode("LAND")):
+            print("Trying to set vehicle mode to LAND")
+            self.vehicle.mode = VehicleMode("LAND")
+        print("Landing")
 
     def getState(self):
         stateobj = {
@@ -149,13 +156,14 @@ class Drone(dronekit.Vehicle):
 
         print(stateobj)
     
-    def setStateReport(self, freq):
-        if(self.stateReportTimer.is_alive()):
+    def setStateReport(self, interval):
+        if(self.stateReportTimer and self.stateReportTimer.is_alive()):
             print("There's already a State Report Timer")
             return -1
         
-        self.stateReportTimer = RepeatTimer(5, self.getState)
+        self.stateReportTimer = RepeatTimer(interval, self.getState)
         self.stateReportTimer.start()
+        print("State Report Set")
         return 0
     
     def cancelStateReport(self):
