@@ -2,7 +2,7 @@ import requests
 
 def checkInternetConnection(vehicle):
     url = "https://www.google.com"
-    timeout = 1
+    timeout = 10
     try:
         request = requests.get(url, timeout=timeout)
         # print("Connected to the Internet")

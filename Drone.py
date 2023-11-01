@@ -156,14 +156,13 @@ class Drone(dronekit.Vehicle):
         height_float = float(self.vehicle.location.global_frame.alt)
         formatted_height = f"{height_float:06.2f}"
         current_time = datetime.now().strftime("%M%S")    # This will turn the time into minute and second format, something like 0835 (08:35)
-        formatted_time = current_time[-3:]                # Only the last digit of minute and the seconds needed, so 0835 => 835
 
         # time_float = float(self_vehicle.time)
         # formatted_time = f"{time_float % 10:04.2f}"
-        TCP_msg = "V" + str("{:.6f}".format(float(self.vehicle.location.global_frame.lat))) + str("{:.5f}".format(float(self.vehicle.location.global_frame.lon))) \
-                +  str(formatted_height) + str(formatted_time)
+        TCP_msg = str("{:011.8f}".format(float(self.vehicle.location.global_frame.lat))) + str("{:012.8f}".format(float(self.vehicle.location.global_frame.lon))) \
+                +  str(formatted_height) + str(current_time)
         client.send(TCP_msg.encode())
-        
+        print("Sent:",TCP_msg)
         # self_vehicle.write_to_file(record_filename)
         
         # self_vehicle.write_to_file(record_filename)
@@ -174,10 +173,10 @@ class Drone(dronekit.Vehicle):
         msg = client.recv(1024)
         str_msg = msg.decode()
         print("Received:",str_msg)
-        lat = float(str_msg[1:10])
-        lon = float(str_msg[10:19])
-        alt = float(str_msg[19:25])
-        recvTime = int(str_msg[25:])
+        lat = float(str_msg[0:11])
+        lon = float(str_msg[11:23])
+        alt = float(str_msg[23:29])
+        recvTime = int(str_msg[29:])
         p1 = LocationGlobalRelative(lat,lon,alt)
         
         print("Distance:",get_distance_metres(p1,self.vehicle.location.global_frame))
