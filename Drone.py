@@ -6,9 +6,13 @@ import sys
 import math
 from threading import Timer
 from RepeatTimer import RepeatTimer
+from datetime import datetime
 
+# Within Accepted Delay (in sec) the received data will be considered valid
+ACCEPTED_DELAY = 3 
 
 class Drone(dronekit.Vehicle):
+    # (24.78910480,120.99512870) 交大操場入口再往前一點
     def __init__(self, connection_string):  
         print("Connect to vehicle on: %s" % connection_string)
         self.vehicle = connect(connection_string, wait_ready=True)
@@ -145,7 +149,54 @@ class Drone(dronekit.Vehicle):
         else:
             print("There is no State Report Timer Running")
 
+    # Base Drone will need to send its coordinates to Rover Drone
+    def sendInfo(self,client):
+        # timecode = (timecode + 1) % 10
+        
+        height_float = float(self.vehicle.location.global_frame.alt)
+        formatted_height = f"{height_float:06.2f}"
+        current_time = datetime.now().strftime("%M%S")    # This will turn the time into minute and second format, something like 0835 (08:35)
+        formatted_time = current_time[-3:]                # Only the last digit of minute and the seconds needed, so 0835 => 835
 
+        # time_float = float(self_vehicle.time)
+        # formatted_time = f"{time_float % 10:04.2f}"
+        TCP_msg = "V" + str("{:.6f}".format(float(self.vehicle.location.global_frame.lat))) + str("{:.5f}".format(float(self.vehicle.location.global_frame.lon))) \
+                +  str(formatted_height) + str(formatted_time)
+        client.send(TCP_msg.encode())
+        
+        # self_vehicle.write_to_file(record_filename)
+        
+        # self_vehicle.write_to_file(record_filename)
+
+    # Rover Drone will need to receive Base's coordinates and keep following it (keep flyToPoint(Base's coordinates))
+    def receiveInfo(self, client):
+        
+        msg = client.recv(1024)
+        str_msg = msg.decode()
+        print("Received:",str_msg)
+        lat = float(str_msg[1:10])
+        lon = float(str_msg[10:19])
+        alt = float(str_msg[19:25])
+        recvTime = int(str_msg[25:])
+        p1 = LocationGlobalRelative(lat,lon,alt)
+        
+        print("Distance:",get_distance_metres(p1,self.vehicle.location.global_frame))
+
+        currentTime = int(datetime.now().strftime("%M%S"))
+        ''' If the received data was delayed for less than ___ seconds'''
+        if(currentTime - recvTime < ACCEPTED_DELAY):
+            return p1
+        else:
+            print("Rover received an outdated message")
+            return None
+        # other_vehicle.update_by_TCP(str_msg)
+        
+        # other_vehicle.write_to_file(record_filename)
+
+        # point1 = LocationGlobalRelative(float(other_vehicle.latitude), float(other_vehicle.longitude), float(other_vehicle.height))
+        # point2 = LocationGlobalRelative(float(vehicle.location.global_frame.lat), float(vehicle.location.global_frame.lon), float(vehicle.location.global_frame.alt))
+        # print(get_distance_metres(point1,point2))
+        
 
 
 

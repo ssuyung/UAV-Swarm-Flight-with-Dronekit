@@ -5,3 +5,10 @@ class RepeatTimer(Timer):
     def run(self):
         while not self.finished.wait(self.interval):
             self.function(*self.args, **self.kwargs)
+
+'''
+usage: 
+timer = RepeatTimer(5, <name of function>)
+timer.start()
+timer.cancel()
+'''
