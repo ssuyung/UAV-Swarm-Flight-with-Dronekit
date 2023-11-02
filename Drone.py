@@ -14,11 +14,18 @@ ACCEPTED_DELAY = 3
 class Drone(dronekit.Vehicle):
     # (24.78910480,120.99512870) 交大操場入口再往前一點
     def __init__(self, connection_string):  
-        print("Connect to vehicle on: %s" % connection_string)
-        self.vehicle = connect(connection_string, wait_ready=True)
+        print("Connecting to vehicle on: %s" % connection_string)
+        self.connected = True
+        try:
+            self.vehicle = connect(connection_string, wait_ready=True)
+        except Exception as e:
+            print(e)
+            self.connected = False
+
+        
         self.stateCheck=None
         self.stateReportTimer=None
-
+    
     def preArmCheck(self):
         print("Basic pre-arm checks")
         # Don't try to arm until autopilot is ready

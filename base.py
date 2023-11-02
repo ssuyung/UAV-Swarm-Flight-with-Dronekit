@@ -8,11 +8,14 @@ from Drone import Drone
 from Internet import checkInternetConnection
 from RepeatTimer import RepeatTimer
 
-# connection_string = "/dev/ttyACM0"
-connection_string = "/dev/tty.usbmodem14101"
+
+connection_strings = ["/dev/ttyACM0","/dev/tty.usbmodem14101"]
+# connection_string = "/dev/tty.usbmodem14101"
 
 ''' Connect to vehicle '''
-vehicle = Drone(connection_string)
+for connection_string in connection_strings:
+    vehicle = Drone(connection_string)
+    if(vehicle.connected): break
 vehicle.setStateReport(3)
 
 ''' Setting up a checker to see if internet connection works, otherwise land the vehicle'''
