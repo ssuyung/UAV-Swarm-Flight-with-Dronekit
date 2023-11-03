@@ -12,6 +12,13 @@ from Drone import Drone
 from RepeatTimer import RepeatTimer
 from Internet import checkInternetConnection
 
+def sendMsg():
+    vehicle.sendInfo(client)
+
+if(len(sys.argv) <4): 
+    print("Should have 3 arguments: argv[] = [<'base' or 'rover'>, <base's IP>, <port number>]")
+    sys.exit()
+
 connection_strings = ["/dev/ttyACM0","/dev/tty.usbmodem14101"]
 # connection_string = "/dev/tty.usbmodem14101"
 
@@ -26,8 +33,6 @@ checkConnectTimer = RepeatTimer(10,checkInternetConnection,args=(vehicle,))
 checkConnectTimer.start()
 print("Check Connect Timer Set")
 
-def sendMsg():
-    vehicle.sendInfo(client)
 
 if(sys.argv[1] == "base"):
     print("=====BASE=====")
@@ -43,6 +48,9 @@ if(sys.argv[1] == "base"):
     
     sendMsgTimer = RepeatTimer(1,sendMsg)
     sendMsgTimer.start()
+    while(1):
+        print("Base in while loop")
+        time.sleep(1)
 
 elif(sys.argv[1] == "rover"):
     print("=====ROVER=====")
@@ -54,12 +62,21 @@ elif(sys.argv[1] == "rover"):
     port = int(sys.argv[3])
     client.connect((ip,port))
     print("Rover Connection Established")
-
-    while(1):
+    vehicle.takeoff(3)
+    
+    counter=0
+    while(counter<5):
+        print("Enter Iteration",counter)
         targetPoint = vehicle.receiveInfo(client)
-        # if(targetPoint != None):
-        #     vehicle.flyToPoint(targetPoint)
-        time.sleep(1)
+        
+        if(targetPoint != None):
+            targetPoint.alt = 3
+            print("Received target:",targetPoint)
+            vehicle.flyToPoint(targetPoint)
+        counter = counter+1
+        time.sleep(0.7)
+    
+    vehicle.land()
 
 
 else:

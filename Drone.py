@@ -27,6 +27,7 @@ class Drone(dronekit.Vehicle):
         self.stateReportTimer=None
     
     def preArmCheck(self):
+        self.vehicle.manualArm = True
         print("Basic pre-arm checks")
         # Don't try to arm until autopilot is ready
         while not self.vehicle.is_armable:
@@ -89,6 +90,8 @@ class Drone(dronekit.Vehicle):
 
     def flyToPoint(self,targetPoint):
         # point1 = LocationGlobalRelative(float(lat), float(lon), float(alt))
+        self.vehicle.airspeed = 1
+
         print("Target Point: ({:12.8f},{:12.8f},{:5.2f})".format(targetPoint.lat,targetPoint.lon,targetPoint.alt))
 
         targetDistance = get_distance_metres(self.vehicle.location.global_relative_frame, targetPoint)
@@ -183,10 +186,10 @@ class Drone(dronekit.Vehicle):
         lat = float(str_msg[0:11])
         lon = float(str_msg[11:23])
         alt = float(str_msg[23:29])
-        recvTime = int(str_msg[29:])
+        recvTime = int(str_msg[29:33])
         p1 = LocationGlobalRelative(lat,lon,alt)
         
-        print("Distance:",get_distance_metres(p1,self.vehicle.location.global_frame))
+        print("Distance to the received point:",get_distance_metres(p1,self.vehicle.location.global_frame))
 
         currentTime = int(datetime.now().strftime("%M%S"))
         ''' If the received data was delayed for less than ___ seconds'''
