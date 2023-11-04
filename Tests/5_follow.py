@@ -13,6 +13,8 @@ from Drone import Drone
 from RepeatTimer import RepeatTimer
 from Internet import checkInternetConnection
 
+from get_ip import get_ip_address_and_base_or_rover
+
 def sendMsg():
     vehicle.sendInfo(client)
 
@@ -34,13 +36,14 @@ checkConnectTimer = RepeatTimer(10,checkInternetConnection,args=(vehicle,))
 checkConnectTimer.start()
 print("Check Connect Timer Set")
 
+ip, base_or_rover = get_ip_address_and_base_or_rover()
 
-if(sys.argv[1] == "base"):
+if(base_or_rover == "base"):
     print("=====BASE=====")
     ''' Setting up server '''
-    # ip = "172.20.10.8"
-    ip = sys.argv[2]
-    port = int(sys.argv[3])
+    #ip = "172.20.10.8"
+    #ip = sys.argv[2]
+    port = int(sys.argv[1])
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.bind((ip,port))
     server.listen(5)
@@ -53,14 +56,14 @@ if(sys.argv[1] == "base"):
         print("Base in while loop")
         time.sleep(1)
 
-elif(sys.argv[1] == "rover"):
+elif(base_or_rover == "rover"):
     print("=====ROVER=====")
 
     ''' Setting up client '''
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # ip = "172.20.10.8"
-    ip = sys.argv[2]
-    port = int(sys.argv[3])
+    #ip = "172.20.10.8"
+    #ip = sys.argv[2]
+    port = int(sys.argv[1])
     client.connect((ip,port))
     print("Rover Connection Established")
     vehicle.takeoff(3)
