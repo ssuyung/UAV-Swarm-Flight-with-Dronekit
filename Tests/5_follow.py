@@ -1,3 +1,4 @@
+
 '''
 argv[] = [<"base" or "rover">, <base's IP>, <port number>]
 '''
@@ -62,18 +63,32 @@ elif(sys.argv[1] == "rover"):
     port = int(sys.argv[3])
     client.connect((ip,port))
     print("Rover Connection Established")
+    vehicle.takeoff(3)
     
     counter=0
-    while(counter<5):
+    numInvalidMsg = 0
+    ''' 
+    We only want our iterations be counted when the drone actually goes to the point, 
+    so only increment counter when the received message is valid. 
+    numInvalidMsg is a safety measure that makes sure if the rover forever receives outdated (invalid) message, 
+    we will break from the loop and land.
+    '''
+    while(numInvalidMsg < 5 and counter<5):
         print("Enter Iteration",counter)
         targetPoint = vehicle.receiveInfo(client)
         
         if(targetPoint != None):
             targetPoint.alt = 3
             print("Received target:",targetPoint)
-        counter = counter+1
+            vehicle.flyToPoint(targetPoint)
+            counter = counter+1
+            numInvalidMsg = 0
+        else:
+            numInvalidMsg = numInvalidMsg + 1
+        
         time.sleep(0.7)
     
+    vehicle.land()
 
 
 else:

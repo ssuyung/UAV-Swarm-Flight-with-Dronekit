@@ -90,7 +90,7 @@ class Drone(dronekit.Vehicle):
 
     def flyToPoint(self,targetPoint):
         # point1 = LocationGlobalRelative(float(lat), float(lon), float(alt))
-        self.vehicle.airspeed = 1
+        self.vehicle.airspeed = 2
 
         print("Target Point: ({:12.8f},{:12.8f},{:5.2f})".format(targetPoint.lat,targetPoint.lon,targetPoint.alt))
 
@@ -186,14 +186,14 @@ class Drone(dronekit.Vehicle):
         lat = float(str_msg[0:11])
         lon = float(str_msg[11:23])
         alt = float(str_msg[23:29])
-        recvTime = int(str_msg[29:33])
+        recvTime = int(str_msg[31:33])
         p1 = LocationGlobalRelative(lat,lon,alt)
         
         print("Distance to the received point:",get_distance_metres(p1,self.vehicle.location.global_frame))
 
-        currentTime = int(datetime.now().strftime("%M%S"))
+        currentTime = int(datetime.now().strftime("%S"))
         ''' If the received data was delayed for less than ___ seconds'''
-        if(currentTime - recvTime < ACCEPTED_DELAY):
+        if(timeIsValid(curTime=currentTime,recvTime=recvTime)):
             return p1
         else:
             print("Rover received an outdated message")
@@ -208,6 +208,13 @@ class Drone(dronekit.Vehicle):
         
 
 
+def timeIsValid(recvTime, curTime):
+    if(curTime >= recvTime):
+        if(curTime-recvTime < ACCEPTED_DELAY): return True
+        else: return False
+    else:
+        if(curTime+60 -recvTime < ACCEPTED_DELAY): return True
+        else: return False
 
 def get_distance_metres(aLocation1, aLocation2):
     """
