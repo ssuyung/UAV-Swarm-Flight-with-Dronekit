@@ -89,6 +89,7 @@ if(sys.argv[1] == "base"):
     print("Base landed, closing TCP connection")
     client.close()
 
+# elif(sys.argv[1] == "rover"):
 elif(sys.argv[1] == "rover"):
     print("=====ROVER=====")
 

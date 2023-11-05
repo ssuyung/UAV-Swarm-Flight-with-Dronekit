@@ -20,6 +20,8 @@ from Internet import checkInternetConnection
 SEND_INTERVAL = 1
 SLEEP_LENGTH = 0.5
 
+from get_ip import get_ip_address_and_base_or_rover
+
 def sendMsg():
     vehicle.sendInfo(client)
 
@@ -41,11 +43,13 @@ checkConnectTimer = RepeatTimer(10,checkInternetConnection,args=(vehicle,))
 checkConnectTimer.start()
 print("Check Connect Timer Set")
 
+ip, base_or_rover = get_ip_address_and_base_or_rover()
 
+# if(base_or_rover == "base"):
 if(sys.argv[1] == "base"):
     print("=====BASE=====")
     ''' Setting up server '''
-    # ip = "172.20.10.8"
+    #ip = "172.20.10.8"
     ip = sys.argv[2]
     port = int(sys.argv[3])
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -60,12 +64,13 @@ if(sys.argv[1] == "base"):
         print("Base in while loop")
         time.sleep(1)
 
+# elif(base_or_rover == "rover"):
 elif(sys.argv[1] == "rover"):
     print("=====ROVER=====")
 
     ''' Setting up client '''
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # ip = "172.20.10.8"
+    #ip = "172.20.10.8"
     ip = sys.argv[2]
     port = int(sys.argv[3])
     client.connect((ip,port))
