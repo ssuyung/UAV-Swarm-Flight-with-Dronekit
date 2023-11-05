@@ -88,9 +88,9 @@ class Drone(dronekit.Vehicle):
         # fly to takoff location
         print("Exiting takeoff()")
 
-    def flyToPoint(self,targetPoint):
+    def flyToPoint(self,targetPoint, speed):
         # point1 = LocationGlobalRelative(float(lat), float(lon), float(alt))
-        self.vehicle.airspeed = 2
+        self.vehicle.airspeed = speed
 
         print("Target Point: ({:12.8f},{:12.8f},{:5.2f})".format(targetPoint.lat,targetPoint.lon,targetPoint.alt))
 
@@ -111,10 +111,25 @@ class Drone(dronekit.Vehicle):
                 return
 
             time.sleep(1)
+    def flyToPointNonBlocking(self,targetPoint, speed):
+        '''
+        Non-blocking flyToPoint, so returning from this function does NOT guarantee the vehicle has reached the target.
+        '''
+        # point1 = LocationGlobalRelative(float(lat), float(lon), float(alt))
+        self.vehicle.airspeed = speed
+
+        print("Target Point: ({:12.8f},{:12.8f},{:5.2f})".format(targetPoint.lat,targetPoint.lon,targetPoint.alt))
+
+        targetDistance = get_distance_metres(self.vehicle.location.global_relative_frame, targetPoint)
+        print("Target distance: ",str(targetDistance))
+
+        self.vehicle.simple_goto(targetPoint)
+        print("Executed simple_goto()")
+
     def land(self):
         self.stateCheck = "land"
+        print("Trying to set vehicle mode to LAND...")
         while(self.vehicle.mode != VehicleMode("LAND")):
-            print("Trying to set vehicle mode to LAND")
             self.vehicle.mode = VehicleMode("LAND")
         print("Landing")
 
@@ -161,32 +176,35 @@ class Drone(dronekit.Vehicle):
 
     # Base Drone will need to send its coordinates to Rover Drone
     def sendInfo(self,client):
-        # timecode = (timecode + 1) % 10
         
-        height_float = float(self.vehicle.location.global_frame.alt)
-        formatted_height = f"{height_float:06.2f}"
+        lat = float(self.vehicle.location.global_frame.lat)
+        lon = float(self.vehicle.location.global_frame.lon)
+        alt = float(self.vehicle.location.global_frame.alt)
+        # formatted_height = f"{height_float:06.2f}"
         current_time = datetime.now().strftime("%M%S")    # This will turn the time into minute and second format, something like 0835 (08:35)
-
-        # time_float = float(self_vehicle.time)
-        # formatted_time = f"{time_float % 10:04.2f}"
-        TCP_msg = str("{:011.8f}".format(float(self.vehicle.location.global_frame.lat))) + str("{:012.8f}".format(float(self.vehicle.location.global_frame.lon))) \
-                +  str(formatted_height) + str(current_time)
+        assert(lat/100 < 1 and lat/10 >= 1)               # Assumes in Taiwan, where lat = 24.???
+        assert(lon/1000 < 1 and lon/100 >= 1)             # Assumes in Taiwan, where lon = 120.???
+        assert(alt/100 < 1)                               # Assumes altitude below 100, if higher the message format requires adaptation
+        TCP_msg = str("{:011.8f}".format(lat)) + str("{:012.8f}".format(lon)) + str("{:06.2f}".format(alt)) + str(current_time)
         client.send(TCP_msg.encode())
         print("Sent:",TCP_msg)
-        # self_vehicle.write_to_file(record_filename)
-        
-        # self_vehicle.write_to_file(record_filename)
 
     # Rover Drone will need to receive Base's coordinates and keep following it (keep flyToPoint(Base's coordinates))
     def receiveInfo(self, client):
         
         msg = client.recv(1024)
+        if(not msg): return 0
+
         str_msg = msg.decode()
         print("Received:",str_msg)
         lat = float(str_msg[0:11])
         lon = float(str_msg[11:23])
         alt = float(str_msg[23:29])
         recvTime = int(str_msg[31:33])
+        assert(lat/100 < 1 and lat/10 >= 1)               # Assumes in Taiwan, where lat = 24.???
+        assert(lon/1000 < 1 and lon/100 >= 1)             # Assumes in Taiwan, where lon = 120.???
+        assert(alt/100 < 1)                               # Assumes height below 100, if higher the message format requires adaptation
+
         p1 = LocationGlobalRelative(lat,lon,alt)
         
         print("Distance to the received point:",get_distance_metres(p1,self.vehicle.location.global_frame))
@@ -197,6 +215,7 @@ class Drone(dronekit.Vehicle):
             return p1
         else:
             print("Rover received an outdated message")
+            print(currentTime,recvTime)
             return None
         # other_vehicle.update_by_TCP(str_msg)
         
@@ -223,6 +242,7 @@ def get_distance_metres(aLocation1, aLocation2):
     This method is an approximation, and will not be accurate over large distances and close to the 
     earth's poles.
     """
+    # 0.00000898 difference => 1 meter
     dlat = float(aLocation2.lat) - float(aLocation1.lat)
     dlong = float(aLocation2.lon) - float(aLocation1.lon)
     return math.sqrt((dlat*dlat) + (dlong*dlong)) * 1.113195e5
