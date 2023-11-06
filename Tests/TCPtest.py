@@ -25,11 +25,18 @@ if(sys.argv[1] == "base"):
     print("Base Connection established")
     
     counter = 0
-    while(counter <21):
-        TCP_msg = str(counter)
-        client.send(TCP_msg.encode())
-        counter = counter + 1
-        time.sleep(2)
+    
+    TCP_msg = str(counter)
+    client.send(TCP_msg.encode())
+    counter = counter + 1
+    time.sleep(2)
+
+    while(1):
+        msg = client.recv(10)
+        if not msg:
+            print("Base leaving")
+            break
+        print(msg.decode())
     client.close()
 
 elif(sys.argv[1] == "rover"):
@@ -43,15 +50,15 @@ elif(sys.argv[1] == "rover"):
     client.connect((ip,port))
     print("Rover Connection Established")
     # client.send("this is rover".encode())
-    while(1):
-        msg = client.recv(20)
-        if(msg):
-            str_msg = msg.decode()
-            print("Received:",str_msg)
-        else:
-            print("end of connection")
-            break
-        time.sleep(1)
+    msg = client.recv(20)
+    if(msg):
+        str_msg = msg.decode()
+        print("Received:",str_msg)
+    else:
+        print("end of connection")
+
+    time.sleep(1)
+    client.send("end".encode())
 
     client.close()
 

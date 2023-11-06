@@ -1,7 +1,6 @@
 ''' 
 In this testcase we will fly two drones, base(leader) and rover(follower) at the same time, and to make sure
-that they won't collide in the air, base will need to fly at a lower altitude and will land first, then signal
-rover to allow rover to land.
+that they won't collide in the air, base will need to fly at a higher altitude, takeoff first, and land after rover.
 '''
 
 '''
@@ -20,8 +19,8 @@ from Internet import checkInternetConnection
 
 SEND_INTERVAL = 1
 SLEEP_LENGTH = 0.5
-BASE_ALT = 3
-ROVER_ALT = 6
+BASE_ALT = 6
+ROVER_ALT = 3
 
 def sendMsg():
     vehicle.sendInfo(client)
@@ -57,37 +56,47 @@ if(sys.argv[1] == "base"):
     client, address = server.accept()
     print("Base Connection established")
     
-    sendMsgTimer = RepeatTimer(SEND_INTERVAL,sendMsg)
-    sendMsgTimer.start()
 
-    org = vehicle.vehicle.location.global_frame
     points = list()
     diff = 0.00000898
     points.append(LocationGlobalRelative(24.7882662,120.9951193,BASE_ALT))   # 操場右邊（面對司令台）跑道邊緣往中間兩公尺左右
     points.append(LocationGlobalRelative(24.7882345,120.9951183,BASE_ALT))   # 操場右邊（面對司令台）跑道邊緣
 
-    # points.append(LocationGlobalRelative(float(org.lat)+diff, float(org.lon), BASE_ALT))
-    # points.append(LocationGlobalRelative(float(org.lat), float(org.lon)+diff, BASE_ALT))
-    # points.append(LocationGlobalRelative(float(org.lat)-diff, float(org.lon), BASE_ALT))
-    # points.append(LocationGlobalRelative(float(org.lat), float(org.lon)-diff, BASE_ALT))
-    # print(points[0], points[1], points[2], points[3])
-
     vehicle.takeoff(BASE_ALT)
-    
+
+    # Tell rover to take off
+    client.send("TAKEOFF".encode())
+
+    # Wait for "TOOKOFF" from rover
+    msg = client.recv(100).decode()
+    if(msg != "TOOKOFF"):
+        print("Received incorrect message from rover:", msg)
+        sys.exit()
+
+    # Start sending the coordinates
+    sendMsgTimer = RepeatTimer(SEND_INTERVAL,sendMsg)
+    sendMsgTimer.start()
+
+    # Start going to the pre-determined points
     for point in points:
         # 1. go to a pre-determined coordinate
         vehicle.flyToPoint(point, 2)
         time.sleep(5)
 
+    # Stop sending coordinates
+    sendMsgTimer.cancel()
+
+    # Tell rover to land
+    client.send("LAND".encode())
+
+    # Wait for "LANDED" from rover
+    msg = client.recv(100).decode()
+    if(msg != "LANDED"):
+        print("Received incorrect message from rover:", msg)
+        sys.exit()
+
+    # Land the base drone
     vehicle.land()
-
-    # Make sure the vehicle is landed then signal the rover so that they won't collide during landing
-    while(vehicle.vehicle.location.global_relative_frame.alt>=5):
-        time.sleep(1)
-
-    time.sleep(2)
-    print("Base landed, closing TCP connection")
-    client.close()
 
 # elif(sys.argv[1] == "rover"):
 elif(sys.argv[1] == "rover"):
@@ -100,21 +109,25 @@ elif(sys.argv[1] == "rover"):
     port = int(sys.argv[3])
     client.connect((ip,port))
     print("Rover Connection Established")
+
+    # Waiting for "TAKEOFF" from base
+    msg = client.recv(10).decode()
+    if(msg != "TAKEOFF"):
+        print("Received incorrect message from rover:", msg)
+        sys.exit()
+
     vehicle.takeoff(ROVER_ALT)
+
+    # Tell base that rover has tookoff
+    client.send("TOOKOFF".encode())
     
-    counter=0
-    numInvalidMsg = 0
-    ''' 
-    We only want our iterations be counted when the drone actually goes to the point, 
-    so only increment counter when the received message is valid. 
-    numInvalidMsg is a safety measure that makes sure if the rover forever receives outdated (invalid) message, 
-    we will break from the loop and land.
-    '''
-    while(numInvalidMsg < 5 and counter<20):
-        print("Enter Iteration",counter)
+    
+    # Follow the base drone
+    while(1):
         targetPoint = vehicle.receiveInfo(client)
+
         if(targetPoint == 0):
-            print("End of TCP connection")
+            print("Received LAND")
             break
         elif(targetPoint != None):
             targetPoint.alt = ROVER_ALT
@@ -122,16 +135,22 @@ elif(sys.argv[1] == "rover"):
             # vehicle.flyToPoint(targetPoint, 2)
             vehicle.flyToPointNonBlocking(targetPoint, 2)
             counter = counter+1
-            numInvalidMsg = 0
-            time.sleep(0.5)
-        else:
-            numInvalidMsg = numInvalidMsg + 1
-        
-        time.sleep(SLEEP_LENGTH)
+            numInvalidMsg = 0            
+            time.sleep(SLEEP_LENGTH)
     
+    # Landing the rover drone
     vehicle.land()
 
-    client.close()
+    # Make sure the vehicle is landed (cause land() is aync) then signal the rover so that they won't collide during landing
+    while(vehicle.vehicle.location.global_relative_frame.alt>=1):
+        time.sleep(1)
+
+    time.sleep(1)
+    print("Rover landed")
+
+    # Tell base that rover has landed
+    client.send("LANDED".encode())
+
 
 else:
     print("Please specify which drone it is")
