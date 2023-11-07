@@ -1,3 +1,7 @@
+'''
+This file is a safety measure. 
+When programs abort or idle because of bug, run this file to land the vehicle immediately!
+'''
 from dronekit import connect, VehicleMode, LocationGlobalRelative
 import time
 import sys

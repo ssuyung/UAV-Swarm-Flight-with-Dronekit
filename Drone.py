@@ -135,7 +135,7 @@ class Drone(dronekit.Vehicle):
         print("Executed simple_goto()")
 
     def land(self):
-        # Waiting for manual confirmation for takeoff
+        # Waiting for manual confirmation for landing
         if(input("Allow landing? y/n\n") != "y"):
             pass
 

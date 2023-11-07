@@ -105,7 +105,6 @@ if(sys.argv[1] == "base"):
     # Land the base drone
     vehicle.land()
 
-# elif(sys.argv[1] == "rover"):
 elif(sys.argv[1] == "rover"):
     print("=====ROVER=====")
 
