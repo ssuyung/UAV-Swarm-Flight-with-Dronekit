@@ -19,11 +19,8 @@ from Internet import checkInternetConnection
 
 SEND_INTERVAL = 1
 SLEEP_LENGTH = 0.5
-BASE_ALT = 6
-ROVER_ALT = 3
-
-def sendMsg():
-    vehicle.sendInfo(client)
+BASE_ALT = 7
+ROVER_ALT = 4
 
 if(len(sys.argv) <4): 
     print("Should have 3 arguments: argv[] = [<'base' or 'rover'>, <base's IP>, <port number>]")
@@ -104,9 +101,13 @@ elif(sys.argv[1] == "rover"):
     # Tell base that rover has tookoff
     client.send("TOOKOFF".encode())
     
-    
-  
-    
+    targetPoint = vehicle.receiveInfo(client)
+    if(targetPoint == 0):
+        print("Received LAND")
+    else:
+        print("Received incorrect message from rover:", msg)
+        sys.exit()
+
     # Landing the rover drone
     vehicle.land()
 

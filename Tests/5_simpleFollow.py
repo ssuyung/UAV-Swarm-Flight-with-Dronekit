@@ -22,7 +22,7 @@ SLEEP_LENGTH = 0.5
 
 from get_ip import get_ip_address_and_base_or_rover
 
-def sendMsg():
+def sendMsg(client):
     vehicle.sendInfo(client)
 
 if(len(sys.argv) <4): 
@@ -58,7 +58,7 @@ if(sys.argv[1] == "base"):
     client, address = server.accept()
     print("Base Connection established")
     
-    sendMsgTimer = RepeatTimer(SEND_INTERVAL,sendMsg)
+    sendMsgTimer = RepeatTimer(SEND_INTERVAL,sendMsg, args=(client,))
     sendMsgTimer.start()
     while(1):
         print("Base in while loop")

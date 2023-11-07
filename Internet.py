@@ -9,4 +9,4 @@ def checkInternetConnection(vehicle,file=None):
     except (requests.ConnectionError, requests.Timeout) as exception:
         print("No internet connection. Aborting mission")
         if(file): file.write("At time "+datetime.now().strftime("%H%M%S")+" detected loss of connection. Landing!\n")
-        vehicle.land()
+        vehicle.emergencyLand()

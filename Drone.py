@@ -55,10 +55,17 @@ class Drone(dronekit.Vehicle):
                 print(" Waiting for arming...")
             time.sleep(1)
 
+        # Let the propeller spin for a while to warm up so as to increase stability during takeoff
+        time.sleep(2)
+
     def takeoff(self, aTargetAltitude):
         """
         Arms vehicle and fly to aTargetAltitude.
         """
+
+        # Waiting for manual confirmation for takeoff
+        if(input("Allow takeoff? y/n\n") != "y"):
+            pass
 
         self.preArmCheck()
 
@@ -111,6 +118,7 @@ class Drone(dronekit.Vehicle):
                 return
 
             time.sleep(1)
+
     def flyToPointNonBlocking(self,targetPoint, speed):
         '''
         Non-blocking flyToPoint, so returning from this function does NOT guarantee the vehicle has reached the target.
@@ -127,6 +135,21 @@ class Drone(dronekit.Vehicle):
         print("Executed simple_goto()")
 
     def land(self):
+        # Waiting for manual confirmation for takeoff
+        if(input("Allow landing? y/n\n") != "y"):
+            pass
+
+        self.stateCheck = "land"
+        print("Trying to set vehicle mode to LAND...")
+        while(self.vehicle.mode != VehicleMode("LAND")):
+            self.vehicle.mode = VehicleMode("LAND")
+        print("Landing")
+    
+    def emergencyLand(self):
+        '''
+        This function doesn't ask if the user allows landing, but directly lands vehicle.
+        In non-emergent cases, use land() instead.
+        '''
         self.stateCheck = "land"
         print("Trying to set vehicle mode to LAND...")
         while(self.vehicle.mode != VehicleMode("LAND")):
@@ -182,9 +205,9 @@ class Drone(dronekit.Vehicle):
         alt = float(self.vehicle.location.global_frame.alt)
         # formatted_height = f"{height_float:06.2f}"
         current_time = datetime.now().strftime("%M%S")    # This will turn the time into minute and second format, something like 0835 (08:35)
-        assert(lat/100 < 1 and lat/10 >= 1)               # Assumes in Taiwan, where lat = 24.???
-        assert(lon/1000 < 1 and lon/100 >= 1)             # Assumes in Taiwan, where lon = 120.???
-        assert(alt/100 < 1)                               # Assumes altitude below 100, if higher the message format requires adaptation
+        assert(lat <= 90 and lat >= -90)              
+        assert(lon <= 180 and lon >= -180)      
+        assert(alt < 100)                    # Assumes altitude below 100, if higher the message format requires adaptation
         TCP_msg = str("{:011.8f}".format(lat)) + str("{:012.8f}".format(lon)) + str("{:06.2f}".format(alt)) + str(current_time)
         client.send(TCP_msg.encode())
         print("Sent:",TCP_msg)
@@ -193,17 +216,18 @@ class Drone(dronekit.Vehicle):
     def receiveInfo(self, client):
         
         msg = client.recv(1024)
-        if(not msg): return 0
-
         str_msg = msg.decode()
+        if(str_msg.find("LAND") != -1):
+            return 0
+
         print("Received:",str_msg)
         lat = float(str_msg[0:11])
         lon = float(str_msg[11:23])
         alt = float(str_msg[23:29])
         recvTime = int(str_msg[31:33])
-        assert(lat/100 < 1 and lat/10 >= 1)               # Assumes in Taiwan, where lat = 24.???
-        assert(lon/1000 < 1 and lon/100 >= 1)             # Assumes in Taiwan, where lon = 120.???
-        assert(alt/100 < 1)                               # Assumes height below 100, if higher the message format requires adaptation
+        assert(lat <= 90 and lat >= -90)               
+        assert(lon <= 180 and lon >= -180)             
+        assert(alt < 100)                   # Assumes altitude below 100, if higher the message format requires adaptation
 
         p1 = LocationGlobalRelative(lat,lon,alt)
         
@@ -216,16 +240,7 @@ class Drone(dronekit.Vehicle):
         else:
             print("Rover received an outdated message")
             print(currentTime,recvTime)
-            return None
-        # other_vehicle.update_by_TCP(str_msg)
-        
-        # other_vehicle.write_to_file(record_filename)
-
-        # point1 = LocationGlobalRelative(float(other_vehicle.latitude), float(other_vehicle.longitude), float(other_vehicle.height))
-        # point2 = LocationGlobalRelative(float(vehicle.location.global_frame.lat), float(vehicle.location.global_frame.lon), float(vehicle.location.global_frame.alt))
-        # print(get_distance_metres(point1,point2))
-        
-
+            return None     
 
 def timeIsValid(recvTime, curTime):
     if(curTime >= recvTime):

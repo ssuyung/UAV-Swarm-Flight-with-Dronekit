@@ -14,7 +14,7 @@ from Internet import checkInternetConnection
 
 from get_ip import get_ip_address_and_base_or_rover
 
-def sendMsg():
+def sendMsg(client):
     vehicle.sendInfo(client)
 
 if(len(sys.argv) <4): 
@@ -35,34 +35,36 @@ checkConnectTimer = RepeatTimer(10,checkInternetConnection,args=(vehicle,))
 checkConnectTimer.start()
 print("Check Connect Timer Set")
 
-ip, base_or_rover = get_ip_address_and_base_or_rover()
+# ip, base_or_rover = get_ip_address_and_base_or_rover()
 
-if(base_or_rover == "base"):
+# if(base_or_rover == "base"):
+if(sys.argv[1] == "base"):
     print("=====BASE=====")
     ''' Setting up server '''
     #ip = "172.20.10.8"
-    #ip = sys.argv[2]
-    port = int(sys.argv[1])
+    ip = sys.argv[2]
+    port = int(sys.argv[3])
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.bind((ip,port))
     server.listen(5)
     client, address = server.accept()
     print("Base Connection established")
     
-    sendMsgTimer = RepeatTimer(1,sendMsg)
+    sendMsgTimer = RepeatTimer(1,sendMsg, args=(client,))
     sendMsgTimer.start()
     while(1):
         print("Base in while loop")
         time.sleep(1)
 
-elif(base_or_rover == "rover"):
+# elif(base_or_rover == "rover"):
+elif(sys.argv[1] == "rover"):
     print("=====ROVER=====")
 
     ''' Setting up client '''
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     #ip = "172.20.10.8"
-    #ip = sys.argv[2]
-    port = int(sys.argv[1])
+    ip = sys.argv[2]
+    port = int(sys.argv[3])
     client.connect((ip,port))
     print("Rover Connection Established")
     

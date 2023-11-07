@@ -14,4 +14,4 @@ for connection_string in connection_strings:
     vehicle = Drone(connection_string)
     if(vehicle.connected): break
 
-vehicle.land()
+vehicle.emergencyLand()
