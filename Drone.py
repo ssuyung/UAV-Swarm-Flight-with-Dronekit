@@ -64,7 +64,7 @@ class Drone(dronekit.Vehicle):
         """
 
         # Waiting for manual confirmation for takeoff
-        if(input("Allow takeoff? y/n\n") != "y"):
+        while(input("Allow takeoff? y/n\n") != "y"):
             pass
 
         self.preArmCheck()
@@ -132,11 +132,11 @@ class Drone(dronekit.Vehicle):
         print("Target distance: ",str(targetDistance))
 
         self.vehicle.simple_goto(targetPoint)
-        print("Executed simple_goto()")
+        # print("Executed simple_goto()")
 
     def land(self):
         # Waiting for manual confirmation for landing
-        if(input("Allow landing? y/n\n") != "y"):
+        while(input("Allow landing? y/n\n") != "y"):
             pass
 
         self.stateCheck = "land"
