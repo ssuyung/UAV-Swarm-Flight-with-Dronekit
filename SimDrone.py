@@ -12,50 +12,18 @@ from datetime import datetime
 ACCEPTED_DELAY = 3 
 
 class Drone(dronekit.Vehicle):
-    # (24.78910480,120.99512870) 交大操場入口再往前一點
     def __init__(self, connection_string):  
         print("Connecting to vehicle on: %s" % connection_string)
+        self.vehicle = None
         self.connected = True
-        try:
-            self.vehicle = connect(connection_string, wait_ready=True)
-        except Exception as e:
-            print(e)
-            self.connected = False
-
-        
         self.stateCheck=None
         self.stateReportTimer=None
     
     def preArmCheck(self):
-        self.vehicle.manualArm = True
         print("Basic pre-arm checks")
-        # Don't try to arm until autopilot is ready
-        while not self.vehicle.is_armable:
-            if self.stateCheck == "land":
-                print("exit vechicle armable check loop...")
-                return
-            else:
-                print(" Waiting for vehicle to initialise...")
-
-            time.sleep(1)
+        time.sleep(1)
         
         print("Arming motors")
-        # Copter should arm in GUIDED mode
-        self.vehicle.mode = VehicleMode("GUIDED")
-        self.vehicle.armed = True
-
-        # Confirm vehicle armed before attempting to take off
-        while not self.vehicle.armed:
-            if self.stateCheck == "land":
-                print("exit vechicle armed check loop...")
-                return
-            else:
-                self.vehicle.mode = VehicleMode("GUIDED")
-                self.vehicle.armed = True
-                print(" Waiting for arming...")
-            time.sleep(1)
-
-        # Let the propeller spin for a while to warm up so as to increase stability during takeoff
         time.sleep(2)
 
     def takeoff(self, aTargetAltitude):
@@ -71,68 +39,31 @@ class Drone(dronekit.Vehicle):
 
         print("Taking off!")
         print("Ascending to altitude: "+str(aTargetAltitude))
-        self.vehicle.simple_takeoff(aTargetAltitude)  # Take off to target altitude
         
-        
-        # Wait until the vehicle reaches a safe height before processing the goto
-        #  (otherwise the command after Vehicle.simple_takeoff will execute
-        #   immediately).
-
-        while True:
-            print("Altitude: ", self.vehicle.location.global_relative_frame.alt)
-            print("Ascending to altitude: "+str(aTargetAltitude))
-
-            # Break and return from function just below target altitude.
-            if self.vehicle.location.global_relative_frame.alt >= aTargetAltitude * 0.95:
-                print("Reached target altitude")
-                break
-            elif self.stateCheck == "land":
-                print("exit altitude check loop...")
-                return
-            
-            time.sleep(1)
-
-        # fly to takoff location
+        time.sleep(2)
+        print("Reached target altitude")
         print("Exiting takeoff()")
 
     def flyToPoint(self,targetPoint, speed):
-        # point1 = LocationGlobalRelative(float(lat), float(lon), float(alt))
-        self.vehicle.airspeed = speed
-
         print("Target Point: ({:12.8f},{:12.8f},{:5.2f})".format(targetPoint.lat,targetPoint.lon,targetPoint.alt))
 
-        targetDistance = get_distance_metres(self.vehicle.location.global_relative_frame, targetPoint)
-        print("Target distance: ",str(targetDistance))
-
-        self.vehicle.simple_goto(targetPoint)
         print("Executed simple_goto()")
 
-        while self.vehicle.mode.name=="GUIDED": #Stop action if we are no longer in guided mode.
-            remainingDistance=get_distance_metres(self.vehicle.location.global_relative_frame, targetPoint)
-            print("Distance to target: ", remainingDistance)
-            if remainingDistance<=1: #Just below target, in case of undershoot.
-                print("Reached target")
-                break
-            elif self.stateCheck == "land":
-                print("exit distance check loop...")
-                return
-
-            time.sleep(1)
+        time.sleep(1)
+        print("Reached target")
 
     def flyToPointNonBlocking(self,targetPoint, speed):
         '''
         Non-blocking flyToPoint, so returning from this function does NOT guarantee the vehicle has reached the target.
         '''
-        # point1 = LocationGlobalRelative(float(lat), float(lon), float(alt))
-        self.vehicle.airspeed = speed
 
         print("Target Point: ({:12.8f},{:12.8f},{:5.2f})".format(targetPoint.lat,targetPoint.lon,targetPoint.alt))
 
-        targetDistance = get_distance_metres(self.vehicle.location.global_relative_frame, targetPoint)
-        print("Target distance: ",str(targetDistance))
-
         self.vehicle.simple_goto(targetPoint)
-        # print("Executed simple_goto()")
+        print("Executed simple_goto()")
+
+        time.sleep(1)
+        print("Reached target")
 
     def land(self):
         # Waiting for manual confirmation for landing
@@ -141,8 +72,7 @@ class Drone(dronekit.Vehicle):
 
         self.stateCheck = "land"
         print("Trying to set vehicle mode to LAND...")
-        while(self.vehicle.mode != VehicleMode("LAND")):
-            self.vehicle.mode = VehicleMode("LAND")
+        time.sleep(1)
         print("Landing")
     
     def emergencyLand(self):
@@ -152,30 +82,13 @@ class Drone(dronekit.Vehicle):
         '''
         self.stateCheck = "land"
         print("Trying to set vehicle mode to LAND...")
-        while(self.vehicle.mode != VehicleMode("LAND")):
-            self.vehicle.mode = VehicleMode("LAND")
+        time.sleep(1)
         print("Landing")
 
     def getState(self):
         stateobj = {
-            "Mode" : self.vehicle.mode.name,
-            "BatteryVoltage" :self.vehicle.battery.voltage, 
-            "BatteryCurrent" :self.vehicle.battery.current,
-            "BatteryLevel":self.vehicle.battery.level,
-            "IsArmable" : self.vehicle.is_armable,
-            "armed" : self.vehicle.armed,
-            "airspeed": self.vehicle.airspeed,
-            "SystemStatus" : self.vehicle.system_status.state,
-            "GlobalLat" : self.vehicle.location.global_frame.lat,
-            "GlobalLon" : self.vehicle.location.global_frame.lon,
-            "SeaLevelAltitude" : self.vehicle.location.global_frame.alt,
-            "RelativeAlt" : self.vehicle.location.global_relative_frame.alt,
-            "localAlt":self.vehicle.location.local_frame.down
+            "TestObject": 1
         }
-        if(self.vehicle.home_location!=None):
-            stateobj["homeLocationAlt"]=self.vehicle.home_location.alt
-            stateobj["homeLocationLat"]=self.vehicle.home_location.lat
-            stateobj["homeLocationLon"]=self.vehicle.home_location.lon
 
         print(stateobj)
     
@@ -200,9 +113,9 @@ class Drone(dronekit.Vehicle):
     # Base Drone will need to send its coordinates to Rover Drone
     def sendInfo(self,client):
         
-        lat = float(self.vehicle.location.global_frame.lat)
-        lon = float(self.vehicle.location.global_frame.lon)
-        alt = float(self.vehicle.location.global_relative_frame.alt)
+        lat = float(24.7892049)
+        lon = float(120.9949241)
+        alt = float(3)
         # formatted_height = f"{height_float:06.2f}"
         current_time = datetime.now().strftime("%M%S")    # This will turn the time into minute and second format, something like 0835 (08:35)
         # assert(lat <= 90 and lat >= -90)              

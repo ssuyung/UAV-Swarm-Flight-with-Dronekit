@@ -3,9 +3,7 @@ In this testcase we will fly two drones, base(leader) and rover(follower) at the
 that they won't collide in the air, base will need to fly at a higher altitude, takeoff first, and land after rover.
 '''
 
-'''
-argv[] = [<"base" or "rover">, <base's IP>, <port number>]
-'''
+
 from dronekit import connect, VehicleMode, LocationGlobalRelative
 import time
 import sys

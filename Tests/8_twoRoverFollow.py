@@ -58,13 +58,14 @@ if(sys.argv[1] == "base"):
     server1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server1.bind((ip,port1))
     server1.listen(5)
-    client1, address1 = server1.accept()
-    print("Base Connection 1 established")
     
     port2 = int(sys.argv[4])
     server2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server2.bind((ip,port2))
     server2.listen(5)
+
+    client1, address1 = server1.accept()
+    print("Base Connection 1 established")
     client2, address2 = server2.accept()
     print("Base Connection 2 established")
 
@@ -72,8 +73,14 @@ if(sys.argv[1] == "base"):
     diff = 0.00000898
     # points.append(LocationGlobalRelative(24.7882662,120.9951193,BASE_ALT))   # 操場右邊（面對司令台）跑道邊緣往中間兩公尺左右
     # points.append(LocationGlobalRelative(24.7882345,120.9951183,BASE_ALT))   # 操場右邊（面對司令台）跑道邊緣
-    points.append(LocationGlobalRelative(24.7891883,120.9949769,BASE_ALT))
-    points.append(LocationGlobalRelative(24.7891822,120.9951456,BASE_ALT))
+    points.append(LocationGlobalRelative(24.7892049,120.9949241,BASE_ALT))
+    points.append(LocationGlobalRelative(24.7891922,120.9947532,BASE_ALT))
+    points.append(LocationGlobalRelative(24.7891273,120.9946344,BASE_ALT))
+    points.append(LocationGlobalRelative(24.7889804,120.9946283,BASE_ALT))
+    points.append(LocationGlobalRelative(24.7889459,120.9947165,BASE_ALT))
+    points.append(LocationGlobalRelative(24.7889838,120.9948517,BASE_ALT))
+    points.append(LocationGlobalRelative(24.7892049,120.9949241,BASE_ALT))
+
 
     vehicle.takeoff(BASE_ALT)
 
@@ -183,7 +190,7 @@ elif(sys.argv[1][0:5] == "rover"):
             targetPoint.alt = ROVER_ALT
             print("Received target:",targetPoint)
             # vehicle.flyToPoint(targetPoint, 2)
-            vehicle.flyToPointNonBlocking(targetPoint, 2)
+            vehicle.flyToPointNonBlocking(targetPoint, 3)
             # time.sleep(SLEEP_LENGTH)
     
     # Landing the rover drone
