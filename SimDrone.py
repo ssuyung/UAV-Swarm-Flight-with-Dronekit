@@ -1,3 +1,7 @@
+'''
+This is a simmulator drone to test programs
+'''
+
 from dronekit import connect, VehicleMode, LocationGlobalRelative
 import dronekit
 import json
@@ -7,17 +11,21 @@ import math
 from threading import Timer
 from RepeatTimer import RepeatTimer
 from datetime import datetime
+from Protocol import Protocol
 
 # Within Accepted Delay (in sec) the received data will be considered valid
 ACCEPTED_DELAY = 3 
-
+class FakeDrone():
+    def __init(self):
+        self.armed = False
 class Drone(dronekit.Vehicle):
     def __init__(self, connection_string):  
         print("Connecting to vehicle on: %s" % connection_string)
-        self.vehicle = None
+        self.vehicle = FakeDrone()
         self.connected = True
         self.stateCheck=None
         self.stateReportTimer=None
+        self.protocol = Protocol()
     
     def preArmCheck(self):
         print("Basic pre-arm checks")
@@ -25,6 +33,7 @@ class Drone(dronekit.Vehicle):
         
         print("Arming motors")
         time.sleep(2)
+        self.vehicle.armed = True
 
     def takeoff(self, aTargetAltitude):
         """
@@ -32,7 +41,7 @@ class Drone(dronekit.Vehicle):
         """
 
         # Waiting for manual confirmation for takeoff
-        while(input("Allow takeoff? y/n\n") != "y"):
+        while(input("\033[93m {}\033[00m".format("Allow takeoff? y/n\n")) != "y"):
             pass
 
         self.preArmCheck()
@@ -59,21 +68,19 @@ class Drone(dronekit.Vehicle):
 
         print("Target Point: ({:12.8f},{:12.8f},{:5.2f})".format(targetPoint.lat,targetPoint.lon,targetPoint.alt))
 
-        self.vehicle.simple_goto(targetPoint)
+        # self.vehicle.simple_goto(targetPoint)
         print("Executed simple_goto()")
-
-        time.sleep(1)
-        print("Reached target")
 
     def land(self):
         # Waiting for manual confirmation for landing
-        while(input("Allow landing? y/n\n") != "y"):
+        while(input("\033[93m {}\033[00m".format("Allow landing? y/n\n")) != "y"):
             pass
 
         self.stateCheck = "land"
         print("Trying to set vehicle mode to LAND...")
         time.sleep(1)
         print("Landing")
+        self.vehicle.armed = False
     
     def emergencyLand(self):
         '''
@@ -84,6 +91,7 @@ class Drone(dronekit.Vehicle):
         print("Trying to set vehicle mode to LAND...")
         time.sleep(1)
         print("Landing")
+        self.vehicle.armed = False
 
     def getState(self):
         stateobj = {
@@ -110,50 +118,62 @@ class Drone(dronekit.Vehicle):
         else:
             print("There is no State Report Timer Running")
 
-    # Base Drone will need to send its coordinates to Rover Drone
-    def sendInfo(self,client):
-        
-        lat = float(24.7892049)
-        lon = float(120.9949241)
-        alt = float(3)
-        # formatted_height = f"{height_float:06.2f}"
-        current_time = datetime.now().strftime("%M%S")    # This will turn the time into minute and second format, something like 0835 (08:35)
-        # assert(lat <= 90 and lat >= -90)              
-        # assert(lon <= 180 and lon >= -180)      
-        # assert(alt < 100)                    # Assumes altitude below 100, if higher the message format requires adaptation
-        TCP_msg = str("{:011.8f}".format(lat)) + str("{:012.8f}".format(lon)) + str("{:06.2f}".format(alt)) + str(current_time)
-        client.send(TCP_msg.encode())
-        print("Sent:",TCP_msg)
-
+    def sendInfo(self,client, msgName):
+        if msgName == "COORDINATES":
+            lat = 24.52457821
+            lon = 120.213213175
+            alt = 5.0
+            current_time = datetime.now().strftime("%M%S")          # This will turn the time into minute and second format, something like 0835 (08:35)
+            # assert(lat <= 90 and lat >= -90)              
+            # assert(lon <= 180 and lon >= -180)      
+            # assert(alt < 100)                    # Assumes altitude below 100, if higher the message format requires adaptation
+            TCP_msg = "0"+ str("{:011.8f}".format(lat)) + str("{:012.8f}".format(lon)) + str("{:06.2f}".format(alt)) + str(current_time)
+            client.send(TCP_msg.encode())
+            print("Sent:",TCP_msg)
+        elif msgName == "TAKEOFF":
+            TCP_msg = "1"
+            client.send(TCP_msg.encode())
+            print("Sent:",TCP_msg)
+        elif msgName == "TOOKOFF":
+            TCP_msg = "2"
+            client.send(TCP_msg.encode())
+            print("Sent:",TCP_msg)
+        elif msgName == "LAND":
+            TCP_msg = "3"
+            client.send(TCP_msg.encode())
+            print("Sent:",TCP_msg)
+        elif msgName == "LANDED":
+            TCP_msg = "4"
+            client.send(TCP_msg.encode())
+            print("Sent:",TCP_msg)
+        else:
+            print("ERROR: Wrong Message Name:", msgName)
     # Rover Drone will need to receive Base's coordinates and keep following it (keep flyToPoint(Base's coordinates))
     def receiveInfo(self, client):
-        
-        msg = client.recv(1024)
-        str_msg = msg.decode()
-        if(str_msg.find("LAND") != -1):
-            return 0
-
-        print("Received:",str_msg)
-        lat = float(str_msg[0:11])
-        lon = float(str_msg[11:23])
-        alt = float(str_msg[23:29])
-        recvTime = int(str_msg[31:33])
-        # assert(lat <= 90 and lat >= -90)               
-        # assert(lon <= 180 and lon >= -180)             
-        # assert(alt < 100)                   # Assumes altitude below 100, if higher the message format requires adaptation
-
-        p1 = LocationGlobalRelative(lat,lon,alt)
-        
-        print("Distance to the received point:",get_distance_metres(p1,self.vehicle.location.global_frame))
-
-        currentTime = int(datetime.now().strftime("%S"))
-        ''' If the received data was delayed for less than ___ seconds'''
-        if(timeIsValid(curTime=currentTime,recvTime=recvTime)):
-            return p1
+        val = self.protocol.recvMsg(client)
+        if(val == None):
+            print("Protocol Received None")
+            return None
+        if(len(val) == 1):
+            msgName = val[0]
+            print("Received Message", msgName)
+            return msgName
         else:
-            print("Rover received an outdated message")
-            print(currentTime,recvTime)
-            return None     
+            lat, lon, alt, recvTime = val
+            print(lat, lon, alt, recvTime)
+            p1 = LocationGlobalRelative(lat,lon,alt)
+            
+            # print("Current Time:", int(datetime.now().strftime("%S")))
+            currentTime = int(datetime.now().strftime("%S"))
+        
+            ''' If the received data was delayed for less than ___ seconds'''
+            if(timeIsValid(curTime=currentTime,recvTime=recvTime)):
+                # print("Distance to the received point:",get_distance_metres(p1,self.vehicle.location.global_frame))
+                return p1
+            else:
+                print("Rover received an outdated message")
+                print(currentTime,recvTime)
+                return None     
 
 def timeIsValid(recvTime, curTime):
     if(curTime >= recvTime):

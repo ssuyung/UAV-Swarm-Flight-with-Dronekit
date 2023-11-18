@@ -14,16 +14,13 @@ import socket
 
 sys.path.append("..")
 from Drone import Drone, get_distance_metres
-from RepeatTimer import RepeatTimer
+from RepeatTimer import RepeatTimer, sendMsg
 from Internet import checkInternetConnection
 
 SEND_INTERVAL = 1
 SLEEP_LENGTH = 0.5
 BASE_ALT = 7
 ROVER_ALT = 4
-
-def sendMsg(client):
-    vehicle.sendInfo(client)
 
 if(len(sys.argv) <4): 
     print("Should have 3 arguments: argv[] = [<'base' or 'rover'>, <base's IP>, <port number>]")
@@ -67,18 +64,19 @@ if(sys.argv[1] == "base"):
     vehicle.takeoff(BASE_ALT)
 
     # Tell rover to take off
-    client.send("TAKEOFF".encode())
+    # client.send("TAKEOFF".encode())
+    vehicle.sendInfo(client,"TAKEOFF")
     print("Sent TAKEOFF")
 
     # Wait for "TOOKOFF" from rover
-    msg = client.recv(100).decode()
+    msg = vehicle.receiveInfo(client)
     if(msg != "TOOKOFF"):
         print("Received incorrect message from rover:", msg)
         sys.exit()
     print("Received TOOKOFF")
 
     # Start sending the coordinates
-    sendMsgTimer = RepeatTimer(SEND_INTERVAL,sendMsg, args=(client,))
+    sendMsgTimer = RepeatTimer(SEND_INTERVAL, sendMsg, args=(vehicle, client,))
     sendMsgTimer.start()
 
     # Start going to the pre-determined points
@@ -91,12 +89,12 @@ if(sys.argv[1] == "base"):
     sendMsgTimer.cancel()
 
     # Tell rover to land
-    client.send("LAND".encode())
+    vehicle.sendInfo(client, "LAND")
     print("Sent LAND")
 
 
     # Wait for "LANDED" from rover
-    msg = client.recv(100).decode()
+    msg = vehicle.receiveInfo(client)
     if(msg != "LANDED"):
         print("Received incorrect message from rover:", msg)
         sys.exit()
@@ -117,7 +115,7 @@ elif(sys.argv[1] == "rover"):
     print("Rover Connection Established")
 
     # Waiting for "TAKEOFF" from base
-    msg = client.recv(10).decode()
+    msg = vehicle.receiveInfo(client)
     if(msg != "TAKEOFF"):
         print("Received incorrect message from base:", msg)
         sys.exit()
@@ -127,23 +125,23 @@ elif(sys.argv[1] == "rover"):
     vehicle.takeoff(ROVER_ALT)
 
     # Tell base that rover has tookoff
-    client.send("TOOKOFF".encode())
+    vehicle.sendInfo(client, "TOOKOFF")
     print("Sent TOOKOFF")
 
     
     # Follow the base drone
     while(1):
-        targetPoint = vehicle.receiveInfo(client)
+        msg = vehicle.receiveInfo(client)
 
-        if(targetPoint == 0):
+        if(msg == "LAND"):
             print("Received LAND")
             break
-        elif(targetPoint != None):
-            targetPoint.alt = ROVER_ALT
-            print("Received target:",targetPoint)
+        elif(type(msg) == LocationGlobalRelative):
+            msg.alt = ROVER_ALT
+            print("Received target:",msg)
             # vehicle.flyToPoint(targetPoint, 2)
-            vehicle.flyToPointNonBlocking(targetPoint, 2)
-            time.sleep(SLEEP_LENGTH)
+            vehicle.flyToPointNonBlocking(msg, 2)
+            # time.sleep(SLEEP_LENGTH)
     
     # Landing the rover drone
     vehicle.land()
@@ -156,7 +154,7 @@ elif(sys.argv[1] == "rover"):
     print("Rover landed")
 
     # Tell base that rover has landed
-    client.send("LANDED".encode())
+    vehicle.sendInfo(client, "LANDED")
     print("Sent LANDED")
 
 

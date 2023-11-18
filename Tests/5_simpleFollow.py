@@ -14,14 +14,11 @@ import socket
 
 sys.path.append("..")
 from Drone import Drone
-from RepeatTimer import RepeatTimer
+from RepeatTimer import RepeatTimer, sendMsg
 from Internet import checkInternetConnection
 
 SEND_INTERVAL = 1
 SLEEP_LENGTH = 0.5
-
-def sendMsg(client):
-    vehicle.sendInfo(client)
 
 if(len(sys.argv) <4): 
     print("Should have 3 arguments: argv[] = [<'base' or 'rover'>, <base's IP>, <port number>]")
@@ -53,7 +50,7 @@ if(sys.argv[1] == "base"):
     client, address = server.accept()
     print("Base Connection established")
     
-    sendMsgTimer = RepeatTimer(SEND_INTERVAL,sendMsg, args=(client,))
+    sendMsgTimer = RepeatTimer(SEND_INTERVAL,sendMsg, args=(vehicle, client,))
     sendMsgTimer.start()
     while(1):
         print("Base in while loop")
@@ -83,7 +80,7 @@ elif(sys.argv[1] == "rover"):
         print("Enter Iteration",counter)
         targetPoint = vehicle.receiveInfo(client)
         
-        if(targetPoint != None):
+        if(type(targetPoint) == LocationGlobalRelative):
             targetPoint.alt = 3
             print("Received target:",targetPoint)
             vehicle.flyToPoint(targetPoint, 2)

@@ -7,7 +7,7 @@ import math
 from threading import Timer
 from RepeatTimer import RepeatTimer
 from datetime import datetime
-
+from Protocol import Protocol
 # Within Accepted Delay (in sec) the received data will be considered valid
 ACCEPTED_DELAY = 3 
 
@@ -25,6 +25,7 @@ class Drone(dronekit.Vehicle):
         
         self.stateCheck=None
         self.stateReportTimer=None
+        self.protocol = Protocol()
     
     def preArmCheck(self):
         self.vehicle.manualArm = True
@@ -64,7 +65,7 @@ class Drone(dronekit.Vehicle):
         """
 
         # Waiting for manual confirmation for takeoff
-        while(input("Allow takeoff? y/n\n") != "y"):
+        while(input("\033[93m {}\033[00m" .format("Allow takeoff? y/n\n")) != "y"):
             pass
 
         self.preArmCheck()
@@ -136,7 +137,7 @@ class Drone(dronekit.Vehicle):
 
     def land(self):
         # Waiting for manual confirmation for landing
-        while(input("Allow landing? y/n\n") != "y"):
+        while(input("\033[93m {}\033[00m" .format("Allow landing? y/n\n")) != "y"):
             pass
 
         self.stateCheck = "land"
@@ -198,8 +199,8 @@ class Drone(dronekit.Vehicle):
             print("There is no State Report Timer Running")
 
     # Base Drone will need to send its coordinates to Rover Drone
-    def sendInfo(self,client):
-        
+    def sendInfo(self, client, msgName):
+        '''
         lat = float(self.vehicle.location.global_frame.lat)
         lon = float(self.vehicle.location.global_frame.lon)
         alt = float(self.vehicle.location.global_relative_frame.alt)
@@ -211,10 +212,11 @@ class Drone(dronekit.Vehicle):
         TCP_msg = str("{:011.8f}".format(lat)) + str("{:012.8f}".format(lon)) + str("{:06.2f}".format(alt)) + str(current_time)
         client.send(TCP_msg.encode())
         print("Sent:",TCP_msg)
-
+        '''
+        self.protocol.sendMsg(client, msgName, self.vehicle)
     # Rover Drone will need to receive Base's coordinates and keep following it (keep flyToPoint(Base's coordinates))
     def receiveInfo(self, client):
-        
+        '''
         msg = client.recv(1024)
         str_msg = msg.decode()
         if(str_msg.find("LAND") != -1):
@@ -228,19 +230,34 @@ class Drone(dronekit.Vehicle):
         # assert(lat <= 90 and lat >= -90)               
         # assert(lon <= 180 and lon >= -180)             
         # assert(alt < 100)                   # Assumes altitude below 100, if higher the message format requires adaptation
-
-        p1 = LocationGlobalRelative(lat,lon,alt)
+        '''
+        val = self.protocol.recvMsg(client)
+        # 1. If Protocol receives None, it is probably because of the connection has been closed
+        if(val == None):
+            print("Protocol Received None")
+            return None
         
-        print("Distance to the received point:",get_distance_metres(p1,self.vehicle.location.global_frame))
-
-        currentTime = int(datetime.now().strftime("%S"))
-        ''' If the received data was delayed for less than ___ seconds'''
-        if(timeIsValid(curTime=currentTime,recvTime=recvTime)):
-            return p1
+        # 2. Messages like LAND, LANDED, TAKEOFF, or TOOKOFF will only contain one value representing which one
+        if(len(val) == 1):
+            msgName = val[0]
+            print("Received Message:", msgName)
+            return msgName
+        
+        # 3. Last possibility is the vehicle coordinates information
         else:
-            print("Rover received an outdated message")
-            print(currentTime,recvTime)
-            return None     
+            lat, lon, alt, recvTime = val
+            print("Received Message:", lat, lon, alt, recvTime)
+            p1 = LocationGlobalRelative(lat,lon,alt)
+            
+            currentTime = int(datetime.now().strftime("%S"))
+            ''' If the received data was delayed for less than ___ seconds'''
+            if(timeIsValid(curTime=currentTime,recvTime=recvTime)):
+                print("Distance to the received point:",get_distance_metres(p1,self.vehicle.location.global_frame))
+                return p1
+            else:
+                print("Rover received an outdated message")
+                print(currentTime,recvTime)
+                return None     
 
 def timeIsValid(recvTime, curTime):
     if(curTime >= recvTime):

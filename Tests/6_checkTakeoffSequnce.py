@@ -55,22 +55,33 @@ if(sys.argv[1] == "base"):
     
     vehicle.takeoff(BASE_ALT)
 
-    # Tell rover to take off
-    client.send("TAKEOFF".encode())
+    # # Tell rover to take off
+    # client.send("TAKEOFF".encode())
 
-    # Wait for "TOOKOFF" from rover
-    msg = client.recv(100).decode()
+    # # Wait for "TOOKOFF" from rover
+    # msg = client.recv(100).decode()
+    # if(msg != "TOOKOFF"):
+    #     print("Received incorrect message from rover:", msg)
+    #     sys.exit()
+    vehicle.sendInfo(client, "TAKEOFF")
+
+    msg = vehicle.receiveInfo(client)
     if(msg != "TOOKOFF"):
         print("Received incorrect message from rover:", msg)
         sys.exit()
 
     time.sleep(1)
 
-    # Tell rover to land
-    client.send("LAND".encode())
+    # # Tell rover to land
+    # client.send("LAND".encode())
 
-    # Wait for "LANDED" from rover
-    msg = client.recv(100).decode()
+    # # Wait for "LANDED" from rover
+    # msg = client.recv(100).decode()
+    # if(msg != "LANDED"):
+    #     print("Received incorrect message from rover:", msg)
+    #     sys.exit()
+    vehicle.sendInfo(client, "LAND")
+    msg = vehicle.receiveInfo(client)
     if(msg != "LANDED"):
         print("Received incorrect message from rover:", msg)
         sys.exit()
@@ -90,8 +101,9 @@ elif(sys.argv[1] == "rover"):
     client.connect((ip,port))
     print("Rover Connection Established")
 
-    # Waiting for "TAKEOFF" from base
-    msg = client.recv(10).decode()
+    # # Waiting for "TAKEOFF" from base
+    # msg = client.recv(10).decode()
+    msg = vehicle.receiveInfo(client)
     if(msg != "TAKEOFF"):
         print("Received incorrect message from rover:", msg)
         sys.exit()
@@ -99,12 +111,11 @@ elif(sys.argv[1] == "rover"):
     vehicle.takeoff(ROVER_ALT)
 
     # Tell base that rover has tookoff
-    client.send("TOOKOFF".encode())
+    # client.send("TOOKOFF".encode())
+    vehicle.sendInfo(client, "TOOKOFF")
     
-    targetPoint = vehicle.receiveInfo(client)
-    if(targetPoint == 0):
-        print("Received LAND")
-    else:
+    msg = vehicle.receiveInfo(client)
+    if(msg != "LAND"):
         print("Received incorrect message from rover:", msg)
         sys.exit()
 
@@ -112,14 +123,15 @@ elif(sys.argv[1] == "rover"):
     vehicle.land()
 
     # Make sure the vehicle is landed (cause land() is aync) then signal the rover so that they won't collide during landing
-    while(vehicle.vehicle.location.global_relative_frame.alt>=1):
+    while(vehicle.vehicle.armed):
         time.sleep(1)
 
     time.sleep(1)
     print("Rover landed")
 
     # Tell base that rover has landed
-    client.send("LANDED".encode())
+    # client.send("LANDED".encode())
+    vehicle.sendInfo(client, "LANDED")
 
 
 else:
