@@ -1,3 +1,6 @@
+'''
+This test makes use of the connection checker feature and test if it works.
+'''
 from dronekit import connect, VehicleMode, LocationGlobalRelative
 import time
 import sys

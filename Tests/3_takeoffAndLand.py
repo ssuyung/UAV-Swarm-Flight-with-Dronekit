@@ -1,3 +1,6 @@
+'''
+This test lets a drone to take off, hold for a few seconds in air, and land, checking if the drone is physically ready for flight.
+'''
 from dronekit import connect, VehicleMode, LocationGlobalRelative
 import time
 import sys

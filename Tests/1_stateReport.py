@@ -1,3 +1,6 @@
+'''
+Check if the state report feature in 'Drone' class works
+'''
 from dronekit import connect, VehicleMode, LocationGlobalRelative
 import time
 import sys

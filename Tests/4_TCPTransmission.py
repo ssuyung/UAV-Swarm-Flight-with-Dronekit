@@ -1,4 +1,6 @@
 '''
+This test checks if a pair of base and rover can communicate through TCP by setting up the 'stateReport' in Drone class.
+
 argv[] = [<"base" or "rover">, <base's IP>, <port number>]
 '''
 from dronekit import connect, VehicleMode, LocationGlobalRelative
